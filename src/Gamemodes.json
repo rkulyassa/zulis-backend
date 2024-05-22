@@ -1,0 +1,80 @@
+{
+    "FFA": {},
+    "Mega": {
+        "WORLD_EAT_OVERLAP_REQ": 0.35,
+        "WORLD_FRICTION": 0.95,
+        "WORLD_SIZE": 500,
+
+        "MAX_CELLS": 64,
+        "MERGE_TIME": 5000,
+        "MERGE_TIME_SCALE": 0.25,
+        "MIN_MASS_TO_EJECT": 40,
+        "MIN_MASS_TO_SPLIT": 126,
+        "SPAWN_MASS": 12000,
+        "BASE_SPEED": 1000,
+        "SPEED_CAP": 0.5,
+        "SPEED_EXPONENT": 1,
+
+        "SPLIT_BOOST": 2,
+        "SPLIT_RESOLVE_DELAY": 500,
+
+        "EJECT_BOOST": 2,
+        "EJECT_DELAY": 0,
+        "EJECT_DISPERSION": 0.3,
+        "EJECT_LIFETIME": 10000,
+        "EJECT_MASS": 16,
+
+        "POP_BOOST": 2,
+        "VIRUS_COUNT": 0,
+        "VIRUS_PUSH_BOOST": 1,
+        "VIRUS_MASS": 150,
+
+        "PELLET_COUNT": 1000,
+        "PELLET_MASS": 2,
+
+        "DEAD_CELL_LIFETIME": 10000,
+
+        "DECAY_RATE": 2000,
+        "DECAY_SCALE": 0.999
+    },
+    "Giga": {},
+    "Test": {
+        "decay": {
+            "rate": 2000,
+            "scale": 0.999
+        },
+        "eject": {
+            "boost": 2,
+            "delay": 5,
+            "dispersion": 0.3,
+            "friction": 0.96,
+            "lifetime": 10000,
+            "mass": 20,
+            "minMass": 36
+        },
+        "mapSize": 500,
+        "pellet": {
+            "count": 0,
+            "mass": 2
+        },
+        "playerCell": {
+            "spawnMass": 3600,
+            "speed": 0.005,
+            "speedCap": 0.6
+        },
+        "split": {
+            "boost": 2,
+            "cap": 64,
+            "friction": 0.95,
+            "minMass": 126,
+            "resolveDelay": 750
+        },
+        "virus": {
+            "count": 1,
+            "friction": 0.95,
+            "mass": 500,
+            "popBoost": 1,
+            "popDistance": 20
+        }
+    }
+}
