@@ -6,19 +6,19 @@ import { EjectedCell } from '../cells/EjectedCell';
 import { Virus } from '../cells/Virus';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { Quadtree } from '../../primitives/Quadtree';
-import { Rectangle } from '../../primitives/geometry/Rectangle';
 import { areaToRadius, areIntersecting } from '../../primitives/geometry/Utils';
 import { randomInt, randomFromInterval } from '../../primitives/Misc';
 import { Controller } from '../Controller';
 import { WorldActions } from '../../types/Enums';
 import { DeadCell } from '../cells/DeadCell';
 import * as Physics from './Physics';
+import { Square } from '../../primitives/geometry/Square';
 
 export class World {
     private settings: WorldSettings;
     private tps: number;
     private cells: Array<Cell>;
-    private boundary: Rectangle;
+    private boundary: Square;
     private quadtree: Quadtree<Cell>;
     private actions: Array<[WorldActions, Cell, any?]>;
     private controllers: Array<Controller>;
@@ -28,7 +28,7 @@ export class World {
         this.tps = tps;
         this.cells = new Array<Cell>();
         const size = this.settings.WORLD_SIZE;
-        this.boundary = new Rectangle(new Vector2(size/2, size/2), size, size);
+        this.boundary = new Square(new Vector2(size/2, size/2), size);
         this.quadtree = new Quadtree(this.boundary, 4, 16);
         this.actions = new Array<[WorldActions, Cell, any?]>();
         this.controllers = new Array<Controller>();
@@ -152,6 +152,11 @@ export class World {
         this.actions.push([WorldActions.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
     }
 
+    /**
+     * Pops a {@link PlayerCell}.
+     * Enqueues the creation of the popped {@link PlayerCell}s and update of the popping {@link PlayerCell}.
+     * @param cell The {@link PlayerCell} to pop.
+     */
     popCell(cell: PlayerCell): void {
         const playerCells = this.getPlayerCellsByPid(cell.getOwnerPid());
         const poppedCount = this.settings.MAX_CELLS - playerCells.length;
@@ -172,37 +177,6 @@ export class World {
         }
 
         this.actions.push([WorldActions.UPDATE_CELL, cell, -poppedMass]);
-    }
-
-    /**
-     * Moves the {@link Cell} out of the wall and handles velocity.
-     * @param cell - The {@link Cell} to resolve.
-     */
-    resolveWallCollision(cell: Cell): void {
-        const size = this.settings.WORLD_SIZE;
-        const x = cell.getPosition().getX();
-        const y = cell.getPosition().getY();
-
-        if (x < 0) {
-            cell.getPosition().setX(0);
-            if (cell instanceof EjectedCell || Virus) cell.getBoost().flipX();
-            if (cell instanceof EjectedCell) cell.setExitedParent(true);
-        }
-        if (x > size) {
-            cell.getPosition().setX(size);
-            if (cell instanceof EjectedCell || Virus) cell.getBoost().flipX();
-            if (cell instanceof EjectedCell) cell.setExitedParent(true);
-        }
-        if (y < 0) {
-            cell.getPosition().setY(0);
-            if (cell instanceof EjectedCell || Virus) cell.getBoost().flipY();
-            if (cell instanceof EjectedCell) cell.setExitedParent(true);
-        }
-        if (y > size) {
-            cell.getPosition().setY(size);
-            if (cell instanceof EjectedCell || Virus) cell.getBoost().flipY();
-            if (cell instanceof EjectedCell) cell.setExitedParent(true);
-        }
     }
 
     resolveEat(predator: Cell, prey: Cell): void {
@@ -305,7 +279,7 @@ export class World {
         for (const cell of this.cells) {
             // cells moved prior to insertion
             cell.stepMotion();
-            this.resolveWallCollision(cell);
+            cell.handleWallBounce(this.boundary);
 
             //insert cells
             this.quadtree.insert(cell);

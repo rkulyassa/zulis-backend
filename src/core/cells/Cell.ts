@@ -1,16 +1,17 @@
-import { Circle } from '../../primitives/geometry/Circle';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { WorldSettings } from '../../types/WorldSettings';
 import { PlayerCell } from './PlayerCell';
+import { Circle } from '../../primitives/geometry/Circle';
+import { Square } from '../../primitives/geometry/Square';
 
 export abstract class Cell {
     static index: number = 0;
     private id: number;
     protected settings: WorldSettings;
     private radius: number;
-    private position: Vector2;
+    protected position: Vector2;
     private velocity: Vector2;
-    private boost: Vector2;
+    protected boost: Vector2;
     protected age: number = 0;
     private eater: Cell = null;
 
@@ -85,6 +86,26 @@ export abstract class Cell {
         this.position.add(this.velocity);
         this.position.add(this.boost);
         this.boost.multiply(this.settings.WORLD_FRICTION);
+    }
+
+    handleWallBounce(worldBoundary: Square): void {
+        if (this.getBoundary().fitsWithin(worldBoundary)) return;
+
+        const [x, y] = this.position.getAsArray();
+        const size = worldBoundary.getWidth();
+
+        if (x < 0) {
+            this.position.setX(0);
+        }
+        if (x > size) {
+            this.position.setX(size);
+        }
+        if (y < 0) {
+            this.position.setY(0);
+        }
+        if (y > size) {
+            this.position.setY(size);
+        }
     }
 
     canEat(other: Cell): boolean {

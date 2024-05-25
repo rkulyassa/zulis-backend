@@ -7,6 +7,8 @@ export class Pellet extends Cell {
         super(settings, radius, position, new Vector2(0), new Vector2(0));
     }
 
+    
+    override handleWallBounce() {}
     override stepMotion() {}
     override tick() {}
 }
