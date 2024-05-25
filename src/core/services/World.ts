@@ -10,8 +10,7 @@ import { Rectangle } from '../../primitives/geometry/Rectangle';
 import { areaToRadius, areIntersecting } from '../../primitives/geometry/Utils';
 import { randomInt, randomFromInterval } from '../../primitives/Misc';
 import { Controller } from '../Controller';
-import { WorldActions, CellTypes } from '../../types/Enums';
-import { ClientOpcodes } from '../../types/Protocol';
+import { WorldActions } from '../../types/Enums';
 import { DeadCell } from '../cells/DeadCell';
 import * as Physics from './Physics';
 
@@ -64,7 +63,7 @@ export class World {
      * @param pid - The pid of the cell's owner.
      */
     spawnPlayerCell(pid: number): void {
-        const radius = Math.sqrt(this.settings.SPAWN_MASS/Math.PI);
+        const radius = areaToRadius(this.settings.SPAWN_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
         const newCell = new PlayerCell(this.settings, pid, radius, spawnPos, new Vector2(0));
 
@@ -144,7 +143,7 @@ export class World {
      * @param direction - The {@link Vector2} direction to eject towards.
      */
     ejectFromCell(cell: PlayerCell, direction: Vector2): void {
-        const radius = Math.sqrt(this.settings.EJECT_MASS/Math.PI);
+        const radius = areaToRadius(this.settings.EJECT_MASS);
         const spawnPos = cell.getPosition().getSum(direction.getMultiple(cell.getRadius()));
         const dispersion = randomFromInterval(-this.settings.EJECT_DISPERSION, this.settings.EJECT_DISPERSION);
         const boost = direction.getMultiple(this.settings.EJECT_BOOST).getRotated(dispersion);
@@ -153,40 +152,26 @@ export class World {
         this.actions.push([WorldActions.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
     }
 
-    getCellsPacket(pid: number, viewport: Rectangle): Object {
-        const data = [];
-        let totalMass = 0;
-        for (const cell of this.quadtree.query(viewport)) {
-            // console.log(cell.getId(), cell.getEater());
-            let cellType;
-            if (cell instanceof Pellet) {
-                cellType = CellTypes.PELLET;
-            } else if (cell instanceof PlayerCell) {
-                // TODO: remove distinction?
-                if (pid === cell.getOwnerPid()) {
-                    cellType = CellTypes.OWNED_CELL;
-                    totalMass += cell.getMass();
-                } else {
-                    cellType = CellTypes.OTHER_CELL;
-                }
-            } else if (cell instanceof EjectedCell) {
-                cellType = CellTypes.EJECTED_CELL;
-            } else if (cell instanceof Virus) {
-                cellType = CellTypes.VIRUS;
-            } else if (cell instanceof DeadCell) {
-                cellType = CellTypes.DEAD_CELL;
-            }
+    popCell(cell: PlayerCell): void {
+        const playerCells = this.getPlayerCellsByPid(cell.getOwnerPid());
+        const poppedCount = this.settings.MAX_CELLS - playerCells.length;
+        if (poppedCount === 0) return;
 
-            data.push([
-                cell.getId(),
-                cellType,
-                cell.getPosition().getX(),
-                cell.getPosition().getY(),
-                cell.getRadius()
-            ]);
+        const pid = cell.getOwnerPid();
+        const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/poppedCount);
+        const position = cell.getPosition();
+
+        let poppedMass = 0;
+
+        for (let i = 0; i < poppedCount; i++) {
+            const boostDirection = Vector2.fromAngle(randomFromInterval(0, 2*Math.PI));
+            const boost = boostDirection.getMultiple(this.settings.POP_BOOST);
+            const poppedCell = new PlayerCell(this.settings, pid, radius, position.getSum(boostDirection.getNormal()), boost);
+            poppedMass += poppedCell.getMass();
+            this.actions.push([WorldActions.CREATE_CELL, poppedCell]);
         }
-        // console.log(totalMass);
-        return data;
+
+        this.actions.push([WorldActions.UPDATE_CELL, cell, -poppedMass]);
     }
 
     /**
@@ -224,47 +209,10 @@ export class World {
         while(predator.getEater() !== null) {
             predator = predator.getEater();
         }
-        if (predator === prey) return; // not sure why this is necessary but it is lol
+        if (predator === prey) return; // move this out of here?, not sure why this is necessary since predator would never equal prey?
         this.actions.push([WorldActions.EAT, predator, prey]);
         prey.setEater(predator);
         if (predator instanceof PlayerCell && prey instanceof Pellet) this.spawnPellet();
-    }
-
-    popCell(cell: PlayerCell): void {
-        const playerCells = this.getPlayerCellsByPid(cell.getOwnerPid());
-        const poppedCount = this.settings.MAX_CELLS - playerCells.length;
-        if (poppedCount === 0) return;
-
-        const pid = cell.getOwnerPid();
-        const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/poppedCount);
-        const position = cell.getPosition();
-
-        let poppedMass = 0;
-
-        for (let i = 0; i < poppedCount; i++) {
-            const boostDirection = Vector2.fromAngle(randomFromInterval(0, 2*Math.PI));
-            const boost = boostDirection.getMultiple(this.settings.POP_BOOST);
-            const poppedCell = new PlayerCell(this.settings, pid, radius, position.getSum(boostDirection.getNormal()), boost);
-            poppedMass += poppedCell.getMass();
-            this.actions.push([WorldActions.CREATE_CELL, poppedCell]);
-        }
-
-        this.actions.push([WorldActions.UPDATE_CELL, cell, -poppedMass]);
-    }
-
-    handleMessage(controller: Controller, opcode: number, data: any): void {
-        switch (opcode) {
-            case ClientOpcodes.MOUSE_MOVE:
-                controller.setInput('mouseVector', new Vector2(data[0], data[1]));
-                break;
-            case ClientOpcodes.TOGGLE_FEED:
-                controller.setInput('isEjecting', data);
-                break;
-            case ClientOpcodes.SPLIT:
-                if (this.getPlayerCellsByPid(controller.getPid()).length >= this.settings.MAX_CELLS) return;
-                controller.setInput('toSplit', data);
-                break;
-        }
     }
 
     tick(tps: number): void {
