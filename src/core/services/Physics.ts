@@ -1,6 +1,4 @@
 import { Cell } from "../cells/Cell";
-import { EjectedCell } from "../cells/EjectedCell";
-import { Virus } from "../cells/Virus";
 import { Vector2 } from "../../primitives/geometry/Vector2";
 
 /**

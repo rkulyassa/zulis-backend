@@ -8,6 +8,8 @@ export class Virus extends Cell {
         super(settings, radius, position, new Vector2(0), new Vector2(0));
     }
 
+    override tick() {}
+
     override handleWallBounce(worldBoundary: Square): void {
         if (this.getBoundary().fitsWithin(worldBoundary)) return;
 

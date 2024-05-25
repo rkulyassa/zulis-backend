@@ -59,8 +59,8 @@ export class World {
     }
 
     /**
-     * Queues the creation of a {@link PlayerCell} in a random location.
-     * @param pid - The pid of the cell's owner.
+     * Enqueues the creation of a {@link PlayerCell} in a random location.
+     * @param pid - The pid of the {@link PlayerCell}'s owner.
      */
     spawnPlayerCell(pid: number): void {
         const radius = areaToRadius(this.settings.SPAWN_MASS);
@@ -78,7 +78,7 @@ export class World {
     }
 
     /**
-     * Spawns a pellet in a random location.
+     * Enqueues the creation of a {@link Pellet} in a random location.
      */
     spawnPellet(): void {
         const radius = areaToRadius(this.settings.PELLET_MASS);
@@ -88,7 +88,7 @@ export class World {
     }
 
     /**
-     * Spawns a virus in a random location.
+     * Enqueues the creation of a {@link Virus} in a random location.
      * TODO: prevent spawns ontop of players
      */
     spawnVirus(): void {
@@ -109,7 +109,7 @@ export class World {
 
     /**
      * Disconnects all {@link PlayerCell}s with corresponding ownerPid.
-     * Queues the deletion of the {@link PlayerCell}s and the creation of {@link DeadCell}s to replace them.
+     * Enqueues the deletion of the {@link PlayerCell}s and the creation of {@link DeadCell}s to replace them.
      * @param pid - The ownerPid to disconnect.
      */
     disconnectPlayerCellsByPid(pid: number): void {
@@ -179,14 +179,19 @@ export class World {
         this.actions.push([WorldActions.UPDATE_CELL, cell, -poppedMass]);
     }
 
+    /**
+     * Handles a {@link Cell}'s consumption of another.
+     * Enqueues the eat action of the two {@link Cell}s.
+     * @param predator - The larger {@link Cell} that will consume the {@link prey}.
+     * @param prey - The smaller {@link Cell} that will be consumed by the {@link predator}.
+     */
     resolveEat(predator: Cell, prey: Cell): void {
-        while(predator.getEater() !== null) {
+        while(predator.getEater() !== null) { // traverse linked list
             predator = predator.getEater();
         }
         if (predator === prey) return; // move this out of here?, not sure why this is necessary since predator would never equal prey?
         this.actions.push([WorldActions.EAT, predator, prey]);
         prey.setEater(predator);
-        if (predator instanceof PlayerCell && prey instanceof Pellet) this.spawnPellet();
     }
 
     tick(tps: number): void {
@@ -295,6 +300,9 @@ export class World {
             if (cell instanceof DeadCell && cell.getAge() > this.settings.DEAD_CELL_LIFETIME) {
                 this.actions.push([WorldActions.DELETE_CELL, cell]);
             }
+            if (cell instanceof EjectedCell && cell.getAge() > this.settings.EJECT_LIFETIME) {
+                this.actions.push([WorldActions.DELETE_CELL, cell]);
+            }
         }
 
         // resolve all collisions & game logic (handled in subsequent tick)
@@ -331,6 +339,7 @@ export class World {
                     if (other instanceof Pellet) {
                         if (cell.canEat(other)) {
                             this.resolveEat(cell, other);
+                            this.spawnPellet();
                         }
                     }
 
