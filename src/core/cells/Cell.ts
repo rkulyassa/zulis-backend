@@ -1,16 +1,18 @@
 import { Circle } from '../../primitives/geometry/Circle';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { WorldSettings } from '../../types/WorldSettings';
+import { PlayerCell } from './PlayerCell';
 
 export abstract class Cell {
     static index: number = 0;
     private id: number;
     protected settings: WorldSettings;
-    protected radius: number;
+    private radius: number;
     private position: Vector2;
     private velocity: Vector2;
     private boost: Vector2;
-    private eater: Cell;
+    protected age: number = 0;
+    private eater: Cell = null;
 
     constructor(settings: WorldSettings, radius: number, position: Vector2, velocity: Vector2, boost: Vector2) {
         this.id = Cell.index;
@@ -20,7 +22,6 @@ export abstract class Cell {
         this.position = position;
         this.velocity = velocity;
         this.boost = boost;
-        this.eater = null;
     }
 
     getId(): number {
@@ -54,6 +55,23 @@ export abstract class Cell {
     setBoost(boost: Vector2): void {
         this.boost = boost;
     }
+
+    getAge(): number {
+        return this.age;
+    }
+    setAge(age: number): void {
+        this.age = age;
+    }
+    tick(tps: number): void {
+        this.age += 1000/tps;
+    }
+
+    getEater(): Cell {
+        return this.eater;
+    }
+    setEater(eater: Cell): void {
+        this.eater = eater;
+    }
     
     getBoundary(): Circle {
         return new Circle(this.position, this.radius);
@@ -70,17 +88,18 @@ export abstract class Cell {
     }
 
     canEat(other: Cell): boolean {
-        const sizeReq = this.getMass() > other.getMass() * 1.2;
+        if (other.getEater()) return false; // other cell has already been eaten
+
         const d = this.getPosition().getDifference(other.getPosition()).getMagnitude();
         const overlapReq = d <= this.getRadius() - other.getRadius() * this.settings.WORLD_EAT_OVERLAP_REQ;
-        return sizeReq && overlapReq;
-    }
-
-    getEater(): Cell {
-        return this.eater;
-    }
-    setEater(eater: Cell): void {
-        this.eater = eater;
+        
+        // let sizeReq;
+        if (other instanceof PlayerCell) { // ignore size check in merge case
+            return overlapReq;
+        } else {
+            const sizeReq = this.getMass() > other.getMass() * 1.2;
+            return overlapReq && sizeReq;
+        }
     }
 
     toString(): string {

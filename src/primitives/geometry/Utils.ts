@@ -3,6 +3,10 @@ import { Circle } from './Circle';
 import { Rectangle } from './Rectangle';
 import { Vector2 } from './Vector2';
 
+export function areaToRadius(area: number): number {
+    return Math.sqrt(area/Math.PI);
+}
+
 export function areIntersecting(a: Shape, b: Shape): boolean {
     if (a instanceof Circle && b instanceof Circle) {
         return intersectsCC(a, b);

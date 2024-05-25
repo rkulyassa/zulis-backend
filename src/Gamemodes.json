@@ -25,11 +25,11 @@
         "EJECT_MASS": 16,
 
         "POP_BOOST": 2,
-        "VIRUS_COUNT": 0,
+        "VIRUS_COUNT": 10,
         "VIRUS_PUSH_BOOST": 1,
         "VIRUS_MASS": 150,
 
-        "PELLET_COUNT": 1000,
+        "PELLET_COUNT": 0,
         "PELLET_MASS": 2,
 
         "DEAD_CELL_LIFETIME": 10000,

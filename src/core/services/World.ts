@@ -7,12 +7,13 @@ import { Virus } from '../cells/Virus';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { Quadtree } from '../../primitives/Quadtree';
 import { Rectangle } from '../../primitives/geometry/Rectangle';
-import { areIntersecting } from '../../primitives/geometry/Utils';
+import { areaToRadius, areIntersecting } from '../../primitives/geometry/Utils';
 import { randomInt, randomFromInterval } from '../../primitives/Misc';
 import { Controller } from '../Controller';
 import { WorldActions, CellTypes } from '../../types/Enums';
 import { ClientOpcodes } from '../../types/Protocol';
 import { DeadCell } from '../cells/DeadCell';
+import * as Physics from './Physics';
 
 export class World {
     private settings: WorldSettings;
@@ -41,18 +42,15 @@ export class World {
         return this.settings[setting];
     }
 
-    addController(controller: Controller): void {
-        this.controllers.push(controller);
-    }
-
     getControllers(): Array<Controller> {
         return this.controllers;
     }
-
     getControllerByPid(pid: number): Controller {
         return this.controllers.find(controller => controller.getPid() === pid);
     }
-
+    addController(controller: Controller): void {
+        this.controllers.push(controller);
+    }
     removeControllerByPid(pid: number): void {
         this.controllers = this.controllers.filter(controller => controller.getPid() !== pid);
     }
@@ -61,27 +59,18 @@ export class World {
         return this.quadtree;
     }
 
-    getCellsByPid(pid: number): Array<PlayerCell> {
-        return this.cells.filter(cell => cell instanceof PlayerCell && cell.getOwnerPid() === pid) as Array<PlayerCell>;
-    }
-
-    disconnectCells(pid: number): void {
-        for (const cell of this.cells) {
-            if (cell instanceof PlayerCell && cell.getOwnerPid() === pid) {
-                this.actions.push([WorldActions.DELETE_CELL, cell]);
-                this.actions.push([WorldActions.CREATE_CELL, new DeadCell(this.settings, cell.getRadius(), cell.getPosition(), cell.getVelocity())]);
-            }
-        }
-    }
-
-    spawnCell(pid: number): void {
+    /**
+     * Queues the creation of a {@link PlayerCell} in a random location.
+     * @param pid - The pid of the cell's owner.
+     */
+    spawnPlayerCell(pid: number): void {
         const radius = Math.sqrt(this.settings.SPAWN_MASS/Math.PI);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
         const newCell = new PlayerCell(this.settings, pid, radius, spawnPos, new Vector2(0));
 
         for (const cell of this.cells) {
             if (cell instanceof Virus && areIntersecting(newCell.getBoundary(), cell.getBoundary())) {
-                this.spawnCell(pid);
+                this.spawnPlayerCell(pid);
                 return;
             }
         }
@@ -89,18 +78,79 @@ export class World {
         this.actions.push([WorldActions.CREATE_CELL, newCell]);
     }
 
+    /**
+     * Spawns a pellet in a random location.
+     */
     spawnPellet(): void {
-        const radius = Math.sqrt(this.settings.PELLET_MASS/Math.PI);
-        const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE + radius), randomInt(this.settings.WORLD_SIZE - radius));
+        const radius = areaToRadius(this.settings.PELLET_MASS);
+        const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
         const pellet = new Pellet(this.settings, radius, spawnPos);
         this.actions.push([WorldActions.CREATE_CELL, pellet]);
     }
 
+    /**
+     * Spawns a virus in a random location.
+     * TODO: prevent spawns ontop of players
+     */
     spawnVirus(): void {
-        const radius = Math.sqrt(this.settings.VIRUS_MASS/Math.PI);
+        const radius = areaToRadius(this.settings.VIRUS_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
         const virus = new Virus(this.settings, radius, spawnPos);
         this.actions.push([WorldActions.CREATE_CELL, virus]);
+    }
+
+    /**
+     * Gets all {@link PlayerCell}s with specified owner {@link pid}.
+     * @param pid - The owner pid to search for.
+     * @returns An {@link Array<PlayerCell>} containing the respective {@link PlayerCell}s.
+     */
+    getPlayerCellsByPid(pid: number): Array<PlayerCell> {
+        return this.cells.filter(cell => cell instanceof PlayerCell && cell.getOwnerPid() === pid) as Array<PlayerCell>;
+    }
+
+    /**
+     * Disconnects all {@link PlayerCell}s with corresponding ownerPid.
+     * Queues the deletion of the {@link PlayerCell}s and the creation of {@link DeadCell}s to replace them.
+     * @param pid - The ownerPid to disconnect.
+     */
+    disconnectPlayerCellsByPid(pid: number): void {
+        const playerCells = this.getPlayerCellsByPid(pid);
+        for (const playerCell of playerCells) {
+            this.actions.push([WorldActions.DELETE_CELL, playerCell]);
+            this.actions.push([WorldActions.CREATE_CELL, new DeadCell(this.settings, playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
+        }
+    }
+
+    /**
+     * Splits a parent {@link PlayerCell} with boost in a specified {@link direction}.
+     * Enqueues the creation of the new {@link PlayerCell} and update of the parent {@link PlayerCell}.
+     * @param cell - The {@link PlayerCell} to be split.
+     * @param direction - The {@link Vector2} direction to split the cell towards.
+     */
+    splitCell(cell: PlayerCell, direction: Vector2): void {
+        const pid = cell.getOwnerPid();
+        const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/2);
+        const position = cell.getPosition().getSum(direction);
+        const boost = direction.getMultiple(this.settings.SPLIT_BOOST);
+        const newCell = new PlayerCell(this.settings, pid, radius, position, boost);
+        this.actions.push([WorldActions.CREATE_CELL, newCell]);
+        this.actions.push([WorldActions.UPDATE_CELL, cell, -newCell.getMass()]);
+    }
+
+    /**
+     * Ejects an {@link EjectedCell} in a specified {@link direction}.
+     * Enqueues the creation of the {@link EjectedCell} and update of the ejecting {@link PlayerCell}.
+     * @param cell - The {@link PlayerCell} to eject from.
+     * @param direction - The {@link Vector2} direction to eject towards.
+     */
+    ejectFromCell(cell: PlayerCell, direction: Vector2): void {
+        const radius = Math.sqrt(this.settings.EJECT_MASS/Math.PI);
+        const spawnPos = cell.getPosition().getSum(direction.getMultiple(cell.getRadius()));
+        const dispersion = randomFromInterval(-this.settings.EJECT_DISPERSION, this.settings.EJECT_DISPERSION);
+        const boost = direction.getMultiple(this.settings.EJECT_BOOST).getRotated(dispersion);
+        const ejectedCell = new EjectedCell(this.settings, radius, spawnPos, boost, cell);
+        this.actions.push([WorldActions.CREATE_CELL, ejectedCell]);
+        this.actions.push([WorldActions.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
     }
 
     getCellsPacket(pid: number, viewport: Rectangle): Object {
@@ -139,36 +189,10 @@ export class World {
         return data;
     }
 
-    getPlayerCenterOfMass(pid: number): Vector2 {
-        const ownedCells = this.getCellsByPid(pid);
-        const center = new Vector2(0, 0);
-        let M = 0;
-        for (const cell of ownedCells) {
-            const m = cell.getMass();
-            center.add(cell.getPosition().getMultiple(m));
-            M += m;
-        }
-        center.multiply(1/M);
-        return center;
-    }
-
-    resolveCollision(a: Cell, b: Cell): void {
-        const d = b.getPosition().getDifference(a.getPosition());
-        const n = d.getNormal();
-        const r = a.getRadius() + b.getRadius();
-        const am = a.getMass();
-        const bm = b.getMass();
-        const m = am + bm;
-        
-        const overlap = (r - d.getMagnitude())/2;
-        const aM = n.getMultiple(overlap * bm/m);
-        const bM = n.getMultiple(overlap * am/m);
-
-        a.getPosition().subtract(aM);
-        b.getPosition().add(bM);
-    }
-
-    // TODO: move to Cell class?
+    /**
+     * Moves the {@link Cell} out of the wall and handles velocity.
+     * @param cell - The {@link Cell} to resolve.
+     */
     resolveWallCollision(cell: Cell): void {
         const size = this.settings.WORLD_SIZE;
         const x = cell.getPosition().getX();
@@ -206,28 +230,8 @@ export class World {
         if (predator instanceof PlayerCell && prey instanceof Pellet) this.spawnPellet();
     }
 
-    ejectFromCell(cell: PlayerCell, direction: Vector2): void {
-        const radius = Math.sqrt(this.settings.EJECT_MASS/Math.PI);
-        const spawnPos = cell.getPosition().getSum(direction.getMultiple(cell.getRadius()));
-        const dispersion = randomFromInterval(-this.settings.EJECT_DISPERSION, this.settings.EJECT_DISPERSION);
-        const boost = direction.getMultiple(this.settings.EJECT_BOOST).getRotated(dispersion);
-        const ejectedCell = new EjectedCell(this.settings, radius, spawnPos, boost, cell);
-        this.actions.push([WorldActions.CREATE_CELL, ejectedCell]);
-        this.actions.push([WorldActions.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
-    }
-    
-    splitCell(cell: PlayerCell, direction: Vector2): void {
-        const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/2);
-        const pid = cell.getOwnerPid();
-        const position = cell.getPosition().getSum(direction);
-        const boost = direction.getMultiple(this.settings.SPLIT_BOOST);
-        const newCell = new PlayerCell(this.settings, pid, radius, position, boost);
-        this.actions.push([WorldActions.CREATE_CELL, newCell]);
-        this.actions.push([WorldActions.UPDATE_CELL, cell, -newCell.getMass()]);
-    }
-
     popCell(cell: PlayerCell): void {
-        const playerCells = this.getCellsByPid(cell.getOwnerPid());
+        const playerCells = this.getPlayerCellsByPid(cell.getOwnerPid());
         const poppedCount = this.settings.MAX_CELLS - playerCells.length;
         if (poppedCount === 0) return;
 
@@ -257,42 +261,31 @@ export class World {
                 controller.setInput('isEjecting', data);
                 break;
             case ClientOpcodes.SPLIT:
-                if (this.getCellsByPid(controller.getPid()).length >= this.settings.MAX_CELLS) return;
+                if (this.getPlayerCellsByPid(controller.getPid()).length >= this.settings.MAX_CELLS) return;
                 controller.setInput('toSplit', data);
                 break;
         }
     }
 
-    tick(): void {
+    tick(tps: number): void {
         // console.log(`\ntick ${Date.now()}\n`);
         // this.quadtree.print();
 
-        // physical cell updates - done separately as to not interfere with collision detection. hence the need for WorldActions system
-        const logging = {
-            creation: false,
-            deletion: false,
-            updates: false,
-            eating: false
-        }
         while (this.actions.length > 0) {
             const [action, cell, data] = this.actions.shift();
             switch(action) {
                 case WorldActions.CREATE_CELL:
                     this.cells.push(cell);
-                    if (logging.creation) console.log('Creating cell:', cell.toString());
                     break;
                 case WorldActions.DELETE_CELL:
                     this.cells.splice(this.cells.indexOf(cell), 1);
-                    if (logging.deletion) console.log('Deleting cell:', cell.toString());
                     break;
                 case WorldActions.UPDATE_CELL:
-                    const og = cell.toString();
-                    cell.setRadius(Math.sqrt((cell.getMass() + data)/Math.PI));
-                    if (logging.updates) console.log('Updating cell:', og, 'gaining', data.toString(), 'mass');
+                    cell.setRadius(areaToRadius(cell.getMass() + data));
                     break;
                 case WorldActions.EAT:
                     let [predator, prey] = [cell, data];
-                    predator.setRadius(Math.sqrt((predator.getMass() + prey.getMass())/Math.PI));
+                    predator.setRadius(areaToRadius(predator.getMass() + prey.getMass()));
                     this.cells.splice(this.cells.indexOf(prey), 1);
                     break;
             }
@@ -303,13 +296,13 @@ export class World {
         for (const controller of this.controllers) {
             const pid = controller.getPid();
             const input = controller.getInput();
+            const playerCells = this.getPlayerCellsByPid(pid);
+            const targetPoint = Physics.getCellsCenterOfMass(playerCells).getSum(input.mouseVector);
 
-            const targetPoint = this.getPlayerCenterOfMass(pid).getSum(input.mouseVector);
-
-            for (const cell of this.getCellsByPid(pid)) {
+            for (const cell of playerCells) {
 
                 // set velocity
-                const speed = this.settings.BASE_SPEED * (1/this.tps) * cell.getRadius() ** -0.5;
+                const speed = this.settings.BASE_SPEED * (1/tps) * cell.getRadius() ** -0.5;
                 let d = targetPoint.getDifference(cell.getPosition());
                 if (d.getMagnitude() === 0) { // cursor in middle
                     cell.setVelocity(new Vector2(0));
@@ -327,10 +320,9 @@ export class World {
                     if (ejectDelayTick > 0) {
                         controller.setEjectTick(ejectDelayTick - 1000/this.tps);
                     } else {
-                        let direction = targetPoint.getDifference(cell.getPosition());
-                        if (direction.getMagnitude() === 0) direction = new Vector2(1,0); // cursor in middle, feed horizontally
+                        if (d.getMagnitude() === 0) d = new Vector2(1,0); // cursor in middle, feed horizontally
                         if (cell.getMass() >= this.settings.MIN_MASS_TO_EJECT) {
-                            this.ejectFromCell(cell, direction.getNormal());
+                            this.ejectFromCell(cell, d.getNormal());
                         }
                         controller.setEjectTick(this.settings.EJECT_DELAY);
                     }
@@ -339,9 +331,10 @@ export class World {
 
             // handle split cells
             if (input.toSplit > 0) {
-                for (const cell of this.getCellsByPid(pid)) {
+                for (const cell of playerCells) {
                     if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT) {
-                        this.splitCell(cell, targetPoint.getDifference(cell.getPosition()).getNormal());
+                        const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
+                        this.splitCell(cell, splitDirection);
                     }
                 }
                 controller.setInput("toSplit", input.toSplit-1);
@@ -370,7 +363,7 @@ export class World {
             this.quadtree.insert(cell);
 
             // tick each cell & update accordingly
-            if (cell instanceof PlayerCell || cell instanceof EjectedCell || cell instanceof DeadCell) cell.tick(this.tps);
+            cell.tick(this.tps);
             if (cell instanceof EjectedCell) cell.checkIfExitedParent();
             if (cell instanceof PlayerCell) {
                 if (cell.getAge() % this.settings.DECAY_RATE <= 500/this.tps) { // this is 500 instead of 1000 because otherwise it decays in 2 subsequent ticks
@@ -384,12 +377,12 @@ export class World {
 
         // resolve all collisions & game logic (handled in subsequent tick)
         for (const cell of this.cells) {
-            if (this.cells.indexOf(cell) === -1) continue;
+            // if (this.cells.indexOf(cell) === -1) continue;
 
             const collisions = this.quadtree.query(cell.getBoundary());
 
             for (const other of collisions) {
-                if (this.cells.indexOf(other) === -1) continue;
+                // if (this.cells.indexOf(other) === -1) continue;
                 if (cell === other) continue;
 
                 if (cell instanceof PlayerCell) {
@@ -400,7 +393,7 @@ export class World {
                                     this.resolveEat(cell, other);
                                 }
                             } else if (!cell.isSplitting() && !other.isSplitting()) {
-                                this.resolveCollision(cell, other);
+                                Physics.resolveCollision(cell, other);
                             }
                         } else if (cell.canEat(other)) {
                             this.resolveEat(cell, other);
@@ -436,7 +429,7 @@ export class World {
 
                 if (cell instanceof EjectedCell) {
                     if (other instanceof EjectedCell) {
-                        this.resolveCollision(cell, other);
+                        Physics.resolveCollision(cell, other);
                     }
 
                     if (other instanceof Virus) {
@@ -446,7 +439,7 @@ export class World {
                 }
 
                 if (cell instanceof DeadCell && other instanceof DeadCell) {
-                    this.resolveCollision(cell, other);
+                    Physics.resolveCollision(cell, other);
                 }
             }
         }

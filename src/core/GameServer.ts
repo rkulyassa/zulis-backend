@@ -4,8 +4,9 @@ import { WorldSettings } from '../types/WorldSettings';
 import { UserData } from "../types/UserData";
 import { Vector2 } from '../primitives/geometry/Vector2';
 import { Controller } from './Controller';
-import { Rectangle } from '../primitives/geometry/Rectangle';
 import { ServerOpcodes } from '../types/Protocol';
+import * as Physics from './services/Physics';
+import { Square } from '../primitives/geometry/Square';
 
 const decoder = new TextDecoder();
 
@@ -56,7 +57,7 @@ export class GameServer {
         this.pidIndex += 1;
         ws.getUserData().pid = pid;
 
-        this.world.spawnCell(pid);
+        this.world.spawnPlayerCell(pid);
         const controller = new Controller(pid, ws);
         this.world.addController(controller);
         controller.sendWS([ServerOpcodes.LOAD_WORLD, this.world.getSetting('WORLD_SIZE')]);
@@ -72,7 +73,7 @@ export class GameServer {
 
     onClose(ws: WebSocket<UserData>, code: number, message: ArrayBuffer) {
         const pid = ws.getUserData().pid;
-        this.world.disconnectCells(pid);
+        this.world.disconnectPlayerCellsByPid(pid);
         this.world.removeControllerByPid(pid);
         console.log(`Player left (pid: ${pid})`);
     }
@@ -91,7 +92,7 @@ export class GameServer {
         });
 
         this.liveUpdate = setInterval(() => {
-            this.world.tick();
+            this.world.tick(this.tps);
 
             for (const controller of this.world.getControllers()) {
                 const pid = controller.getPid();
@@ -100,10 +101,11 @@ export class GameServer {
                 let viewport;
                 if (input.playing) {
                     const threshold = 500;
-                    viewport = new Rectangle(this.world.getPlayerCenterOfMass(pid), threshold, threshold);
+                    const playerCells = this.world.getPlayerCellsByPid(pid);
+                    viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
                 } else {
                     const size = this.world.getSetting("WORLD_SIZE");
-                    viewport = new Rectangle(new Vector2(size/2), size, size);
+                    viewport = new Square(new Vector2(size/2), size);
                 }
 
                 const cells = this.world.getCellsPacket(pid, viewport);
