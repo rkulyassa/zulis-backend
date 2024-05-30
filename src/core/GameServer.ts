@@ -59,6 +59,13 @@ export class GameServer {
         return this.world.getControllers().length;
     }
 
+    /**
+     * Gets a client-specific array representation of all the {@link Cell}s within a given {@link viewport}. The data's structure is defined as per {@link Protocol.ServerOpcodes.UPDATE_GAME_STATE}.
+     * @param pid - The pid of the {@link Controller} that is querying. Used to determine whether a {@link Cell} is owned by the player or not.
+     * @param viewport - The viewport threshold to limit the amount of cells sent to the client around their respective area.
+     * @returns An {@link Array} containing the cell information.
+     * @todo Define, with an interface, the data being passed.
+     */
     getCellsPacket(pid: number, viewport: Rectangle): Object {
         const data = [];
         let totalMass = 0;
@@ -68,7 +75,7 @@ export class GameServer {
             if (cell instanceof Pellet) {
                 cellType = CellTypes.PELLET;
             } else if (cell instanceof PlayerCell) {
-                // TODO: remove distinction? shouldn't matter on client
+                // @todo remove distinction? shouldn't matter on client?
                 if (pid === cell.getOwnerPid()) {
                     cellType = CellTypes.OWNED_CELL;
                     totalMass += cell.getMass();
@@ -96,6 +103,10 @@ export class GameServer {
         return data;
     }
 
+    /**
+     * Handles a new incoming connection.
+     * @param ws - The incoming connection.
+     */
     onConnection(ws: WebSocket<UserData>): void {
         const pid = this.pidIndex;
         this.pidIndex += 1;
@@ -117,6 +128,12 @@ export class GameServer {
         console.log(`Player joined (pid: ${pid})`);
     }
 
+    /**
+     * Handles an incoming message.
+     * @param client - The respective connection of the message.
+     * @param message - The data of the message.
+     * @param isBinary
+     */
     onMessage(client: WebSocket<UserData>, message: ArrayBuffer, isBinary: boolean): void {
         const controller = this.world.getControllerByPid(client.getUserData().pid);
         const [opcode, data] = JSON.parse(decoder.decode(message));
@@ -128,12 +145,17 @@ export class GameServer {
                 controller.setInput('isEjecting', data);
                 break;
             case Protocol.ClientOpcodes.SPLIT:
-                // if (this.world.getPlayerCellsByPid(controller.getPid()).length >= this.settings.MAX_CELLS) return;
                 controller.setInput('toSplit', data);
                 break;
         }
     }
 
+    /**
+     * Handles a disconnection.
+     * @param ws - The disconnecting connection.
+     * @param code
+     * @param message 
+     */
     onClose(ws: WebSocket<UserData>, code: number, message: ArrayBuffer) {
         const pid = ws.getUserData().pid;
         this.world.disconnectPlayerCellsByPid(pid);
@@ -141,6 +163,9 @@ export class GameServer {
         console.log(`Player left (pid: ${pid})`);
     }
 
+    /**
+     * Starts the WebSocket server.
+     */
     start(): void {
         this.uWSApp.ws('/*', {
             open: this.onConnection.bind(this),
@@ -179,6 +204,9 @@ export class GameServer {
         }, 1000/this.tps);
     }
 
+    /**
+     * Ends the WebSocket server.
+     */
     end(): void {
         this.uWSApp.close();
         clearInterval(this.liveUpdate);
