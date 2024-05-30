@@ -64,6 +64,7 @@ export class GameServer {
         let totalMass = 0;
         for (const cell of this.world.getQuadtree().query(viewport)) {
             let cellType;
+            let ownerPid;
             if (cell instanceof Pellet) {
                 cellType = CellTypes.PELLET;
             } else if (cell instanceof PlayerCell) {
@@ -74,6 +75,7 @@ export class GameServer {
                 } else {
                     cellType = CellTypes.OTHER_CELL;
                 }
+                ownerPid = cell.getOwnerPid();
             } else if (cell instanceof EjectedCell) {
                 cellType = CellTypes.EJECTED_CELL;
             } else if (cell instanceof Virus) {
@@ -84,6 +86,7 @@ export class GameServer {
 
             data.push([
                 cell.getId(),
+                ownerPid,
                 cellType,
                 cell.getPosition().getX(),
                 cell.getPosition().getY(),
@@ -99,9 +102,17 @@ export class GameServer {
         ws.getUserData().pid = pid;
 
         this.world.spawnPlayerCell(pid);
-        const controller = new Controller(pid, ws);
-        this.world.addController(controller);
-        controller.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, this.world.getSetting('WORLD_SIZE')]);
+        const newController = new Controller(pid, ws);
+        this.world.addController(newController);
+        newController.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, this.world.getSetting('WORLD_SIZE')]);
+
+        for (const controller of this.world.getControllers()) {
+            if (controller === newController) continue;
+            const nick = controller.getNick();
+            const skinId = controller.getSkinId();
+            const inTag = newController.getTeamTag() === controller.getTeamTag();
+            controller.sendWS([Protocol.ServerOpcodes.PLAYER_UPDATE, [pid, skinId, nick, inTag]]);
+        }
 
         console.log(`Player joined (pid: ${pid})`);
     }

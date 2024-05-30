@@ -8,12 +8,18 @@ const encoder = new TextEncoder();
 export class Controller {
     private pid: number;
     private ws: WebSocket<UserData>;
+    private nick: string;
+    private skinId: string;
+    private teamTag: string;
     private input: Input;
     private ejectTick: number;
     
     constructor(pid: number, ws: WebSocket<UserData>) {
         this.pid = pid;
         this.ws = ws;
+        this.nick = `Player ${pid}`;
+        this.skinId = 'abcdefgh';
+        this.teamTag = '';
         this.input = {
             playing: true,
             mouseVector: new Vector2(0),
@@ -27,8 +33,16 @@ export class Controller {
         return this.pid;
     }
 
-    setInput<K extends keyof Input>(input: K, value: Input[K]) {
-        this.input[input] = value;
+    getNick(): string {
+        return this.nick;
+    }
+
+    getSkinId(): string {
+        return this.skinId;
+    }
+
+    getTeamTag(): string {
+        return this.teamTag;
     }
 
     getInput(): Input {
@@ -38,6 +52,9 @@ export class Controller {
             isEjecting: this.input.isEjecting,
             toSplit: this.input.toSplit
         }
+    }
+    setInput<K extends keyof Input>(input: K, value: Input[K]) {
+        this.input[input] = value;
     }
 
     getEjectTick(): number {

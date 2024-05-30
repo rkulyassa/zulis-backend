@@ -7,5 +7,6 @@ export const enum ClientOpcodes {
 
 export const enum ServerOpcodes {
     LOAD_WORLD = 0,
-    UPDATE_GAME_STATE = 1
+    UPDATE_GAME_STATE = 1,
+    PLAYER_UPDATE = 2,
 }
