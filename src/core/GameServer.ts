@@ -184,16 +184,19 @@ export class GameServer {
 
             for (const controller of this.world.getControllers()) {
                 const pid = controller.getPid();
-                const input = controller.getInput();
 
                 let viewport;
-                if (input.playing) {
+                const status = controller.getStatus();
+
+                if (status === 'menu') {
+                    const size = this.world.getSetting("WORLD_SIZE");
+                    viewport = new Square(new Vector2(size/2), size);
+                } else if (status === 'playing') {
                     const threshold = 500;
                     const playerCells = this.world.getPlayerCellsByPid(pid);
                     viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
-                } else {
-                    const size = this.world.getSetting("WORLD_SIZE");
-                    viewport = new Square(new Vector2(size/2), size);
+                } else if (status === 'spectating') {
+                    // @todo
                 }
 
                 const cells = this.getCellsPacket(pid, viewport);

@@ -5,9 +5,12 @@ import { UserData } from "../types/UserData";
 
 const encoder = new TextEncoder();
 
+declare type Status = 'menu'|'playing'|'spectating';
+
 export class Controller {
     private pid: number;
     private ws: WebSocket<UserData>;
+    private status: Status;
     private nick: string;
     private skinId: string;
     private teamTag: string;
@@ -20,8 +23,8 @@ export class Controller {
         this.nick = `Player ${pid}`;
         this.skinId = 'abcdefgh';
         this.teamTag = '';
+        this.status = 'menu';
         this.input = {
-            playing: true,
             mouseVector: new Vector2(0),
             isEjecting: false,
             toSplit: 0
@@ -31,6 +34,13 @@ export class Controller {
 
     getPid(): number {
         return this.pid;
+    }
+
+    getStatus(): Status {
+        return this.status;
+    }
+    setStatus(status: Status): void {
+        this.status = status;
     }
 
     getNick(): string {
@@ -47,7 +57,6 @@ export class Controller {
 
     getInput(): Input {
         return {
-            playing: this.input.playing,
             mouseVector: this.input.mouseVector,
             isEjecting: this.input.isEjecting,
             toSplit: this.input.toSplit
