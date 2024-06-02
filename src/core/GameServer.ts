@@ -6,11 +6,6 @@ import { Vector2 } from '../primitives/geometry/Vector2';
 import { Rectangle } from '../primitives/geometry/Rectangle';
 import { Square } from '../primitives/geometry/Square';
 import { PlayerCell } from './cells/PlayerCell';
-import { Pellet } from './cells/Pellet';
-import { EjectedCell } from './cells/EjectedCell';
-import { Virus } from './cells/Virus';
-import { DeadCell } from './cells/DeadCell';
-import { CellTypes } from '../types/Enums';
 import { Controller, Status } from './Controller';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
@@ -196,25 +191,25 @@ export class GameServer {
 
                 let viewport: Square;
                 const status: Status = controller.getStatus();
+                const playerCells: Array<PlayerCell> = this.world.getPlayerCellsByPid(pid);
 
                 if (status === 'menu') {
                     const size: number = this.world.getSetting("WORLD_SIZE");
                     viewport = new Square(new Vector2(size/2), size);
                 } else if (status === 'playing') {
                     const threshold: number = 500; // @todo: move this into settings somewhere
-                    const playerCells: Array<PlayerCell> = this.world.getPlayerCellsByPid(pid);
                     viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
                 } else if (status === 'spectating') {
                     // @todo get spectate data from controller and query respective viewport
                 }
 
-                const data: Protocol.ServerData.UPDATE_GAME_STATE = [
-                    viewport.getCenter().getX(),
-                    viewport.getCenter().getY(),
-                    this.world.getTotalMassByPid(pid),
-                    0, // @todo: calculate ping per client
-                    this.getCellsPacket(viewport),
-                ];
+                const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
+                const ping: number = 0; // @todo: calculate ping per client
+                const totalMass: number = playerCells.reduce((sum, cell) => sum += cell.getMass(), 0);
+                const cellCount: number = playerCells.length;
+                const stats: Protocol.ClientStats = [ping, totalMass, cellCount];
+                const cells: Array<Protocol.CellData> = this.getCellsPacket(viewport);
+                const data: Protocol.ServerData.UPDATE_GAME_STATE = [viewportX, viewportY, stats, cells];
                 controller.sendWS([Protocol.ServerOpcodes.UPDATE_GAME_STATE, data]);
             }
         }, 1000/this.tps);

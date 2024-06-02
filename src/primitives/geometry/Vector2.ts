@@ -92,19 +92,13 @@ export class Vector2 {
         );
     }
 
-    getAsArray(): Array<number> {
-        return [this.x, this.y];
-    }
-
     static fromAngle(angle: number): Vector2 {
         return new Vector2(Math.cos(angle), Math.sin(angle));
     }
 
-    // static getMidpoint(v1: Vector2, v2: Vector2): Vector2 {
-    //     const x = (v1.x + v2.x) / 2;
-    //     const y = (v1.y + v2.y) / 2;
-    //     return new Vector2(x, y);
-    // }
+    toArray(): [number, number] {
+        return [this.x, this.y];
+    }
 
     toString(): string {
         return JSON.stringify({x: this.x, y: this.y});

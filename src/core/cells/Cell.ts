@@ -94,7 +94,7 @@ export abstract class Cell {
     handleWallBounce(worldBoundary: Square): void {
         if (this.getBoundary().fitsWithin(worldBoundary)) return;
 
-        const [x, y] = this.position.getAsArray();
+        const [x, y] = this.position.toArray();
         const size = worldBoundary.getWidth();
 
         if (x < 0) {

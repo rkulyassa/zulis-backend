@@ -108,7 +108,7 @@ export class World {
     }
 
     /**
-     * Disconnects all {@link PlayerCell}s with corresponding ownerPid.
+     * Disconnects all {@link PlayerCell}s with specified ownerPid.
      * Enqueues the deletion of the {@link PlayerCell}s and the creation of {@link DeadCell}s to replace them.
      * @param pid - The ownerPid to disconnect.
      */
@@ -118,15 +118,6 @@ export class World {
             this.actions.push([WorldActions.DELETE_CELL, playerCell]);
             this.actions.push([WorldActions.CREATE_CELL, new DeadCell(this.settings, playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
         }
-    }
-
-    /**
-     * Gets the total mass of all cells owned by a player with specified pid.
-     * @param pid - The ownerPid to get the total mass of.
-     * @returns The total mass of all cells owned by the player.
-     */
-    getTotalMassByPid(pid: number): number {
-        return this.getPlayerCellsByPid(pid).reduce((sum, cell) => sum += cell.getMass(), 0);
     }
 
     /**
