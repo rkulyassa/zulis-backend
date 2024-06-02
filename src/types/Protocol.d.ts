@@ -43,7 +43,7 @@ export namespace ServerData {
     ]
 }
 
-interface CellData {
+export interface CellData {
     cellId: number;
     ownerPid: number;
     cellType: 0|1|2|3|4|5;

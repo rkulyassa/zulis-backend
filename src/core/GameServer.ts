@@ -11,7 +11,7 @@ import { EjectedCell } from './cells/EjectedCell';
 import { Virus } from './cells/Virus';
 import { DeadCell } from './cells/DeadCell';
 import { CellTypes } from '../types/Enums';
-import { Controller } from './Controller';
+import { Controller, Status } from './Controller';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
@@ -60,18 +60,18 @@ export class GameServer {
     }
 
     /**
-     * Gets a client-specific array representation of all {@link Cell}s within a given {@link viewport}. The data's structure is defined as per {@link Protocol.ServerOpcodes.UPDATE_GAME_STATE}.
+     * Gets a client-specific array representation of all {@link Cell}s within a given {@link viewport}. The data's structure is defined as per {@link Protocol.ServerData.UPDATE_GAME_STATE}.
      * @param pid - The pid of the {@link Controller} that is querying. Used to determine whether a {@link Cell} is owned by the player or not.
      * @param viewport - The viewport threshold to limit the amount of cells sent to the client around their respective area.
      * @returns An {@link Array} containing the cell information.
      * @todo Define, with an interface, the data being passed.
      */
-    getCellsPacket(pid: number, viewport: Rectangle): Object {
+    getCellsPacket(pid: number, viewport: Rectangle): Array<Protocol.CellData> {
         const data = [];
         let totalMass = 0;
         for (const cell of this.world.getQuadtree().query(viewport)) {
-            let cellType;
-            let ownerPid;
+            let cellType: CellTypes;
+            let ownerPid: number|null;
             if (cell instanceof Pellet) {
                 cellType = CellTypes.PELLET;
             } else if (cell instanceof PlayerCell) {
@@ -114,14 +114,17 @@ export class GameServer {
 
         const newController = new Controller(pid, ws);
         this.world.addController(newController);
-        newController.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, this.world.getSetting('WORLD_SIZE')]);
+
+        const data: Protocol.ServerData.LOAD_WORLD = this.world.getSetting('WORLD_SIZE');
+        newController.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, data]);
 
         for (const controller of this.world.getControllers()) {
             if (controller === newController) continue;
             const nick = controller.getNick();
             const skinId = controller.getSkinId();
             const inTag = newController.getTeamTag() === controller.getTeamTag();
-            controller.sendWS([Protocol.ServerOpcodes.PLAYER_UPDATE, [pid, skinId, nick, inTag]]);
+            const data: Protocol.ServerData.PLAYER_UPDATE = [pid, skinId, nick, inTag];
+            controller.sendWS([Protocol.ServerOpcodes.PLAYER_UPDATE, data]);
         }
 
         console.log(`Player joined (pid: ${pid})`);
@@ -134,30 +137,32 @@ export class GameServer {
      * @param isBinary
      */
     onMessage(client: WebSocket<UserData>, message: ArrayBuffer, isBinary: boolean): void {
-        const pid = client.getUserData().pid;
-        const controller = this.world.getControllerByPid(pid);
-        const [opcode, data] = JSON.parse(decoder.decode(message));
+        const pid: number = client.getUserData().pid;
+        const controller: Controller = this.world.getControllerByPid(pid);
+        const [opcode, data]: [number, any] = JSON.parse(decoder.decode(message));
         switch (opcode) {
             case Protocol.ClientOpcodes.SPAWN:
                 if (controller.getStatus() !== 'playing') {
+                    controller.setStatus('playing');
                     this.world.spawnPlayerCell(pid);
                 }
                 break;
             case Protocol.ClientOpcodes.SPECTATE:
-                const [spectateLock, cellId] = data as Protocol.ClientData.SPECTATE;
+                if (controller.getStatus() === 'playing') return;
+                const [spectateLock, cellId]: Protocol.ClientData.SPECTATE = data;
                 controller.setStatus('spectating');
-                // @todo finish spectate mode
+                // @todo finish spectate mode - set data on controller
                 break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
-                const [dx, dy] = data as Protocol.ClientData.MOUSE_MOVE;
+                const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = data;
                 controller.setInput('mouseVector', new Vector2(dx, dy));
                 break;
             case Protocol.ClientOpcodes.TOGGLE_FEED:
-                const isFeeding = data as Protocol.ClientData.TOGGLE_FEED;
+                const isFeeding: Protocol.ClientData.TOGGLE_FEED = data;
                 controller.setInput('isEjecting', isFeeding);
                 break;
             case Protocol.ClientOpcodes.SPLIT:
-                const macro = data as Protocol.ClientData.SPLIT;
+                const macro: Protocol.ClientData.SPLIT = data;
                 controller.setInput('toSplit', data);
                 break;
             case Protocol.ClientOpcodes.STOP_MOVEMENT:
@@ -181,7 +186,7 @@ export class GameServer {
      * @param message 
      */
     onClose(ws: WebSocket<UserData>, code: number, message: ArrayBuffer) {
-        const pid = ws.getUserData().pid;
+        const pid: number = ws.getUserData().pid;
         this.world.disconnectPlayerCellsByPid(pid);
         this.world.removeControllerByPid(pid);
         console.log(`Player left (pid: ${pid})`);
@@ -207,26 +212,28 @@ export class GameServer {
             this.world.tick(this.tps);
 
             for (const controller of this.world.getControllers()) {
-                const pid = controller.getPid();
+                const pid: number = controller.getPid();
 
-                let viewport;
-                const status = controller.getStatus();
+                let viewport: Square;
+                const status: Status = controller.getStatus();
 
                 if (status === 'menu') {
-                    const size = this.world.getSetting("WORLD_SIZE");
+                    const size: number = this.world.getSetting("WORLD_SIZE");
                     viewport = new Square(new Vector2(size/2), size);
                 } else if (status === 'playing') {
-                    const threshold = 500;
-                    const playerCells = this.world.getPlayerCellsByPid(pid);
+                    const threshold: number = 500; // @todo: move this into settings somewhere
+                    const playerCells: Array<PlayerCell> = this.world.getPlayerCellsByPid(pid);
                     viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
                 } else if (status === 'spectating') {
-                    // @todo
+                    // @todo get spectate data from controller and query respective viewport
                 }
 
-                const cells = this.getCellsPacket(pid, viewport);
-
-                const data = [Protocol.ServerOpcodes.UPDATE_GAME_STATE, [viewport.getCenter().getX(), viewport.getCenter().getY(), cells]];//, this.world.getQuadtree()]];//this.world.getQuadtree().getBranchBoundaries()]];
-                controller.sendWS(data);
+                const data: Protocol.ServerData.UPDATE_GAME_STATE = [
+                    viewport.getCenter().getX(),
+                    viewport.getCenter().getY(),
+                    this.getCellsPacket(pid, viewport),
+                ];
+                controller.sendWS([Protocol.ServerOpcodes.UPDATE_GAME_STATE, data]);
             }
         }, 1000/this.tps);
     }

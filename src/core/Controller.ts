@@ -5,7 +5,7 @@ import { UserData } from "../types/UserData";
 
 const encoder = new TextEncoder();
 
-declare type Status = 'menu'|'playing'|'spectating';
+export declare type Status = 'menu'|'playing'|'spectating';
 
 export class Controller {
     private pid: number;
