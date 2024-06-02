@@ -6,10 +6,9 @@ export const enum WorldActions {
 }
 
 export const enum CellTypes {
-    PELLET = 0,
-    OWNED_CELL = 1,
-    OTHER_CELL = 2,
-    EJECTED_CELL = 3,
-    VIRUS = 4,
-    DEAD_CELL = 5,
+    PELLET,
+    PLAYER_CELL,
+    EJECTED_CELL,
+    VIRUS,
+    DEAD_CELL,
 }

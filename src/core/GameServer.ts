@@ -68,37 +68,18 @@ export class GameServer {
      */
     getCellsPacket(pid: number, viewport: Rectangle): Array<Protocol.CellData> {
         const data = [];
-        let totalMass = 0;
+        // let totalMass = 0;
         for (const cell of this.world.getQuadtree().query(viewport)) {
-            let cellType: CellTypes;
-            let ownerPid: number|null;
-            if (cell instanceof Pellet) {
-                cellType = CellTypes.PELLET;
-            } else if (cell instanceof PlayerCell) {
-                // @todo remove distinction? shouldn't matter on client?
-                if (pid === cell.getOwnerPid()) {
-                    cellType = CellTypes.OWNED_CELL;
-                    totalMass += cell.getMass();
-                } else {
-                    cellType = CellTypes.OTHER_CELL;
-                }
-                ownerPid = cell.getOwnerPid();
-            } else if (cell instanceof EjectedCell) {
-                cellType = CellTypes.EJECTED_CELL;
-            } else if (cell instanceof Virus) {
-                cellType = CellTypes.VIRUS;
-            } else if (cell instanceof DeadCell) {
-                cellType = CellTypes.DEAD_CELL;
-            }
 
-            data.push([
+            const cellData: Protocol.CellData = [
                 cell.getId(),
-                ownerPid,
-                cellType,
+                cell.getTypeEnum(),
                 cell.getPosition().getX(),
                 cell.getPosition().getY(),
                 cell.getRadius()
-            ]);
+            ];
+
+            data.push(cellData);
         }
         return data;
     }

@@ -43,11 +43,11 @@ export namespace ServerData {
     ]
 }
 
-export interface CellData {
-    cellId: number;
-    ownerPid: number;
-    cellType: 0|1|2|3|4|5;
-    x: number;
-    y: number;
-    radius: number;
-}
+export type CellData = [
+    cellId: number,
+    // ownerPid: number,
+    cellType: 0|1|2|3|4|5,
+    x: number,
+    y: number,
+    radius: number,
+];

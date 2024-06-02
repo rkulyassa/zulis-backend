@@ -4,6 +4,7 @@ import { Vector2 } from '../../primitives/geometry/Vector2';
 import { areIntersecting } from '../../primitives/geometry/Utils';
 import { WorldSettings } from '../../types/WorldSettings';
 import { Square } from '../../primitives/geometry/Square';
+import { CellTypes } from '../../types/Enums';
 
 export class EjectedCell extends Cell {
     private ejectParent: PlayerCell;
@@ -28,6 +29,10 @@ export class EjectedCell extends Cell {
     }
     hasExitedParent(): boolean {
         return this.exitedParent;
+    }
+
+    getTypeEnum(): CellTypes {
+        return CellTypes.EJECTED_CELL;
     }
 
     override handleWallBounce(worldBoundary: Square): void {
