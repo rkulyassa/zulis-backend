@@ -79,7 +79,7 @@ export class Vector2 {
     getNormal(): Vector2 {
         const magnitude = this.getMagnitude();
         if (magnitude == 0) {
-            throw new Error("Cannot normalize a zero vector.");
+            throw new Error('Cannot normalize a zero vector.');
             // return new Vector2(0, 0);
         }
         return new Vector2(this.x/magnitude, this.y/magnitude);

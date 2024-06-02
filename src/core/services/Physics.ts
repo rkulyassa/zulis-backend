@@ -23,7 +23,7 @@ export function resolveCollision(a: Cell, b: Cell): void {
 }
 
 /**
- * Gets the center of mass of the specified {@link Cell}s.
+ * Gets the center of mass of the specified {@link cells}.
  * 
  * @param cells - The {@link Cell}s to calculate the center of mass of.
  * @returns The center of mass as a {@link Vector2} position.

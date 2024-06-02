@@ -12,7 +12,7 @@ import { Virus } from './cells/Virus';
 import { DeadCell } from './cells/DeadCell';
 import { CellTypes } from '../types/Enums';
 import { Controller } from './Controller';
-import * as Protocol from '../types/Protocol';
+import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
 const decoder = new TextDecoder();
@@ -60,7 +60,7 @@ export class GameServer {
     }
 
     /**
-     * Gets a client-specific array representation of all the {@link Cell}s within a given {@link viewport}. The data's structure is defined as per {@link Protocol.ServerOpcodes.UPDATE_GAME_STATE}.
+     * Gets a client-specific array representation of all {@link Cell}s within a given {@link viewport}. The data's structure is defined as per {@link Protocol.ServerOpcodes.UPDATE_GAME_STATE}.
      * @param pid - The pid of the {@link Controller} that is querying. Used to determine whether a {@link Cell} is owned by the player or not.
      * @param viewport - The viewport threshold to limit the amount of cells sent to the client around their respective area.
      * @returns An {@link Array} containing the cell information.
@@ -112,7 +112,6 @@ export class GameServer {
         this.pidIndex += 1;
         ws.getUserData().pid = pid;
 
-        this.world.spawnPlayerCell(pid);
         const newController = new Controller(pid, ws);
         this.world.addController(newController);
         newController.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, this.world.getSetting('WORLD_SIZE')]);
@@ -135,17 +134,42 @@ export class GameServer {
      * @param isBinary
      */
     onMessage(client: WebSocket<UserData>, message: ArrayBuffer, isBinary: boolean): void {
-        const controller = this.world.getControllerByPid(client.getUserData().pid);
+        const pid = client.getUserData().pid;
+        const controller = this.world.getControllerByPid(pid);
         const [opcode, data] = JSON.parse(decoder.decode(message));
         switch (opcode) {
+            case Protocol.ClientOpcodes.SPAWN:
+                if (controller.getStatus() !== 'playing') {
+                    this.world.spawnPlayerCell(pid);
+                }
+                break;
+            case Protocol.ClientOpcodes.SPECTATE:
+                const [spectateLock, cellId] = data as Protocol.ClientData.SPECTATE;
+                controller.setStatus('spectating');
+                // @todo finish spectate mode
+                break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
-                controller.setInput('mouseVector', new Vector2(data[0], data[1]));
+                const [dx, dy] = data as Protocol.ClientData.MOUSE_MOVE;
+                controller.setInput('mouseVector', new Vector2(dx, dy));
                 break;
             case Protocol.ClientOpcodes.TOGGLE_FEED:
-                controller.setInput('isEjecting', data);
+                const isFeeding = data as Protocol.ClientData.TOGGLE_FEED;
+                controller.setInput('isEjecting', isFeeding);
                 break;
             case Protocol.ClientOpcodes.SPLIT:
+                const macro = data as Protocol.ClientData.SPLIT;
                 controller.setInput('toSplit', data);
+                break;
+            case Protocol.ClientOpcodes.STOP_MOVEMENT:
+                break;
+            case Protocol.ClientOpcodes.FREEZE_MOUSE:
+                break;
+            case Protocol.ClientOpcodes.LOCK_LINESPLIT:
+                break;
+            case Protocol.ClientOpcodes.SAVE_REPLAY:
+                break;
+            default:
+                console.log(`Client (pid: ${pid}) called non-existent opcode ${opcode} with data: ${data}`);
                 break;
         }
     }
@@ -201,7 +225,7 @@ export class GameServer {
 
                 const cells = this.getCellsPacket(pid, viewport);
 
-                const data = [Protocol.ServerOpcodes.UPDATE_GAME_STATE, [viewport.getCenter().getX(), viewport.getCenter().getY(), cells, this.world.getQuadtree()]];//this.world.getQuadtree().getBranchBoundaries()]];
+                const data = [Protocol.ServerOpcodes.UPDATE_GAME_STATE, [viewport.getCenter().getX(), viewport.getCenter().getY(), cells]];//, this.world.getQuadtree()]];//this.world.getQuadtree().getBranchBoundaries()]];
                 controller.sendWS(data);
             }
         }, 1000/this.tps);

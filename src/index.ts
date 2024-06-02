@@ -28,7 +28,7 @@ app.get('/gameservers.json', (req, res) => {
     res.send(data);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
