@@ -121,6 +121,15 @@ export class World {
     }
 
     /**
+     * Gets the total mass of all cells owned by a player with specified pid.
+     * @param pid - The ownerPid to get the total mass of.
+     * @returns The total mass of all cells owned by the player.
+     */
+    getTotalMassByPid(pid: number): number {
+        return this.getPlayerCellsByPid(pid).reduce((sum, cell) => sum += cell.getMass(), 0);
+    }
+
+    /**
      * Splits a parent {@link PlayerCell} with boost in a specified {@link direction}.
      * Enqueues the creation of the new {@link PlayerCell} and update of the parent {@link PlayerCell}.
      * @param cell - The {@link PlayerCell} to be split.

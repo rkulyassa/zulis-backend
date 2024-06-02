@@ -33,6 +33,8 @@ export namespace ServerData {
     type UPDATE_GAME_STATE = [
         viewportX: number,
         viewportY: number,
+        totalMass: number,
+        ping: number,
         cells: Array<CellData>,
     ];
     type PLAYER_UPDATE = [
@@ -45,7 +47,6 @@ export namespace ServerData {
 
 export type CellData = [
     cellId: number,
-    // ownerPid: number,
     cellType: 0|1|2|3|4|5,
     x: number,
     y: number,

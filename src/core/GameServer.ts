@@ -60,15 +60,14 @@ export class GameServer {
     }
 
     /**
-     * Gets a client-specific array representation of all {@link Cell}s within a given {@link viewport}. The data's structure is defined as per {@link Protocol.ServerData.UPDATE_GAME_STATE}.
+     * Gets an array representation of all {@link Cell}s within a given {@link Rectangle}. The data's structure is defined as per {@link Protocol.CellData}.
      * @param pid - The pid of the {@link Controller} that is querying. Used to determine whether a {@link Cell} is owned by the player or not.
      * @param viewport - The viewport threshold to limit the amount of cells sent to the client around their respective area.
-     * @returns An {@link Array} containing the cell information.
-     * @todo Define, with an interface, the data being passed.
+     * @returns An {@link Array<CellData>} containing the found cells.
      */
-    getCellsPacket(pid: number, viewport: Rectangle): Array<Protocol.CellData> {
+    getCellsPacket(viewport: Rectangle): Array<Protocol.CellData> {
         const data = [];
-        // let totalMass = 0;
+
         for (const cell of this.world.getQuadtree().query(viewport)) {
 
             const cellData: Protocol.CellData = [
@@ -212,7 +211,9 @@ export class GameServer {
                 const data: Protocol.ServerData.UPDATE_GAME_STATE = [
                     viewport.getCenter().getX(),
                     viewport.getCenter().getY(),
-                    this.getCellsPacket(pid, viewport),
+                    this.world.getTotalMassByPid(pid),
+                    0, // @todo: calculate ping per client
+                    this.getCellsPacket(viewport),
                 ];
                 controller.sendWS([Protocol.ServerOpcodes.UPDATE_GAME_STATE, data]);
             }
