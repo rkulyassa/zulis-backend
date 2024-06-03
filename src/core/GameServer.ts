@@ -201,6 +201,8 @@ export class GameServer {
                     viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
                 } else if (status === 'spectating') {
                     // @todo get spectate data from controller and query respective viewport
+                    const size: number = this.world.getSetting("WORLD_SIZE");
+                    viewport = new Square(new Vector2(size/2), size);
                 }
 
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
