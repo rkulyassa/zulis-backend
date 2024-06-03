@@ -66,9 +66,10 @@ export class GameServer {
         const data = [];
 
         for (const cell of this.world.getQuadtree().query(viewport)) {
-
+            const ownerPid: number = cell instanceof PlayerCell ? cell.getOwnerPid() : null;
             const cellData: Protocol.CellData = [
                 cell.getId(),
+                ownerPid,
                 cell.getTypeEnum(),
                 cell.getPosition().getX(),
                 cell.getPosition().getY(),
