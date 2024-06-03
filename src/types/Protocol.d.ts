@@ -25,7 +25,8 @@ export namespace ClientData {
 export const enum ServerOpcodes {
     LOAD_WORLD = 0,
     UPDATE_GAME_STATE = 1,
-    PLAYER_UPDATE = 2,
+    STATS_UPDATE = 2,
+    PLAYER_UPDATE = 3,
 }
 
 export namespace ServerData {
@@ -33,7 +34,6 @@ export namespace ServerData {
     type UPDATE_GAME_STATE = [
         viewportX: number,
         viewportY: number,
-        stats: ClientStats,
         cells: Array<CellData>,
     ];
     type PLAYER_UPDATE = [
@@ -41,14 +41,13 @@ export namespace ServerData {
         nick: string,
         skinId: string|null,
         inTag: boolean,
+    ];
+    type STATS_UPDATE = [
+        ping: number,
+        totalMass: number,
+        cellCount: number,
     ]
 }
-
-export type ClientStats = [
-    ping: number,
-    totalMass: number,
-    cellCount: number
-];
 
 export type CellData = [
     cellId: number,

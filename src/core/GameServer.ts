@@ -15,6 +15,7 @@ const decoder = new TextDecoder();
 export class GameServer {
     private uWSApp: TemplatedApp;
     private port: number;
+    private age: number;
     private name: string;
     private region: string;
     private tps: number;
@@ -26,6 +27,7 @@ export class GameServer {
     constructor(port: number, name: string, region: string, tps: number, capacity: number, worldSettings: WorldSettings) {
         this.uWSApp = App();
         this.port = port;
+        this.age = 0;
         this.name = name;
         this.region = region;
         this.tps = tps;
@@ -206,15 +208,22 @@ export class GameServer {
                 }
 
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
-                const ping: number = 0; // @todo: calculate ping per client
-                const totalMass: number = playerCells.reduce((sum, cell) => sum += cell.getMass(), 0);
-                const cellCount: number = playerCells.length;
-                const stats: Protocol.ClientStats = [ping, totalMass, cellCount];
                 const cells: Array<Protocol.CellData> = this.getCellsPacket(viewport);
-                const data: Protocol.ServerData.UPDATE_GAME_STATE = [viewportX, viewportY, stats, cells];
+                const data: Protocol.ServerData.UPDATE_GAME_STATE = [viewportX, viewportY, cells];
                 controller.sendWS([Protocol.ServerOpcodes.UPDATE_GAME_STATE, data]);
+
+                if (this.age % 1000 <= this.tps) {
+                    const ping: number = 0; // @todo: calculate ping per client
+                    const totalMass: number = playerCells.reduce((sum, cell) => sum += cell.getMass(), 0);
+                    const cellCount: number = playerCells.length;
+                    const data: Protocol.ServerData.STATS_UPDATE = [ping, totalMass, cellCount];
+                    controller.sendWS([Protocol.ServerOpcodes.STATS_UPDATE, data]);
+                }
+
+                this.age += 1000/this.tps;
             }
         }, 1000/this.tps);
+
     }
 
     /**
