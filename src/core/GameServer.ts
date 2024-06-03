@@ -214,10 +214,15 @@ export class GameServer {
 
                 if (this.age % 1000 <= this.tps) {
                     const ping: number = 0; // @todo: calculate ping per client
-                    const totalMass: number = playerCells.reduce((sum, cell) => sum += cell.getMass(), 0);
-                    const cellCount: number = playerCells.length;
-                    const data: Protocol.ServerData.STATS_UPDATE = [ping, totalMass, cellCount];
-                    controller.sendWS([Protocol.ServerOpcodes.STATS_UPDATE, data]);
+                    if (status === 'playing') {
+                        const totalMass: number = playerCells.reduce((sum, cell) => sum += cell.getMass(), 0);
+                        const cellCount: number = playerCells.length;
+                        const data: Protocol.ServerData.STATS_UPDATE = [ping, totalMass, cellCount];
+                        controller.sendWS([Protocol.ServerOpcodes.STATS_UPDATE, data]);
+                    } else {
+                        const data: Protocol.ServerData.STATS_UPDATE = [ping, null, null];
+                        controller.sendWS([Protocol.ServerOpcodes.STATS_UPDATE, data]);
+                    }
                 }
 
                 this.age += 1000/this.tps;

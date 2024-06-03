@@ -44,8 +44,8 @@ export namespace ServerData {
     ];
     type STATS_UPDATE = [
         ping: number,
-        totalMass: number,
-        cellCount: number,
+        totalMass: number|null,
+        cellCount: number|null,
     ]
 }
 
