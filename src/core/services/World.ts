@@ -4,15 +4,15 @@ import { PlayerCell } from '../cells/PlayerCell';
 import { Pellet } from '../cells/Pellet';
 import { EjectedCell } from '../cells/EjectedCell';
 import { Virus } from '../cells/Virus';
+import { DeadCell } from '../cells/DeadCell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { Quadtree } from '../../primitives/Quadtree';
+import { Square } from '../../primitives/geometry/Square';
 import { areaToRadius, areIntersecting } from '../../primitives/geometry/Utils';
 import { randomInt, randomFromInterval } from '../../primitives/Misc';
 import { Controller } from '../Controller';
-import { WorldActions } from '../../types/Enums';
-import { DeadCell } from '../cells/DeadCell';
+import * as Enums from '../../types/Enums';
 import * as Physics from './Physics';
-import { Square } from '../../primitives/geometry/Square';
 
 export class World {
     private settings: WorldSettings;
@@ -20,7 +20,7 @@ export class World {
     private cells: Array<Cell>;
     private boundary: Square;
     private quadtree: Quadtree<Cell>;
-    private actions: Array<[WorldActions, Cell, any?]>;
+    private actions: Array<[Enums.WorldAction, Cell, any?]>;
     private controllers: Array<Controller>;
 
     constructor(settings: WorldSettings, tps: number) {
@@ -30,7 +30,7 @@ export class World {
         const size = this.settings.WORLD_SIZE;
         this.boundary = new Square(new Vector2(size/2, size/2), size);
         this.quadtree = new Quadtree(this.boundary, 4, 16);
-        this.actions = new Array<[WorldActions, Cell, any?]>();
+        this.actions = new Array<[Enums.WorldAction, Cell, any?]>();
         this.controllers = new Array<Controller>();
 
         for (let i = 0; i < this.settings.PELLET_COUNT; i++) this.spawnPellet();
@@ -74,7 +74,7 @@ export class World {
             }
         }
 
-        this.actions.push([WorldActions.CREATE_CELL, newCell]);
+        this.actions.push([Enums.WorldAction.CREATE_CELL, newCell]);
     }
 
     /**
@@ -84,7 +84,7 @@ export class World {
         const radius = areaToRadius(this.settings.PELLET_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
         const pellet = new Pellet(this.settings, radius, spawnPos);
-        this.actions.push([WorldActions.CREATE_CELL, pellet]);
+        this.actions.push([Enums.WorldAction.CREATE_CELL, pellet]);
     }
 
     /**
@@ -95,7 +95,7 @@ export class World {
         const radius = areaToRadius(this.settings.VIRUS_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
         const virus = new Virus(this.settings, radius, spawnPos);
-        this.actions.push([WorldActions.CREATE_CELL, virus]);
+        this.actions.push([Enums.WorldAction.CREATE_CELL, virus]);
     }
 
     /**
@@ -115,8 +115,8 @@ export class World {
     disconnectPlayerCellsByPid(pid: number): void {
         const playerCells = this.getPlayerCellsByPid(pid);
         for (const playerCell of playerCells) {
-            this.actions.push([WorldActions.DELETE_CELL, playerCell]);
-            this.actions.push([WorldActions.CREATE_CELL, new DeadCell(this.settings, playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
+            this.actions.push([Enums.WorldAction.DELETE_CELL, playerCell]);
+            this.actions.push([Enums.WorldAction.CREATE_CELL, new DeadCell(this.settings, playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
         }
     }
 
@@ -132,8 +132,8 @@ export class World {
         const position = cell.getPosition().getSum(direction);
         const boost = direction.getMultiple(this.settings.SPLIT_BOOST);
         const newCell = new PlayerCell(this.settings, pid, radius, position, boost);
-        this.actions.push([WorldActions.CREATE_CELL, newCell]);
-        this.actions.push([WorldActions.UPDATE_CELL, cell, -newCell.getMass()]);
+        this.actions.push([Enums.WorldAction.CREATE_CELL, newCell]);
+        this.actions.push([Enums.WorldAction.UPDATE_CELL, cell, -newCell.getMass()]);
     }
 
     /**
@@ -148,8 +148,8 @@ export class World {
         const dispersion = randomFromInterval(-this.settings.EJECT_DISPERSION, this.settings.EJECT_DISPERSION);
         const boost = direction.getMultiple(this.settings.EJECT_BOOST).getRotated(dispersion);
         const ejectedCell = new EjectedCell(this.settings, radius, spawnPos, boost, cell);
-        this.actions.push([WorldActions.CREATE_CELL, ejectedCell]);
-        this.actions.push([WorldActions.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
+        this.actions.push([Enums.WorldAction.CREATE_CELL, ejectedCell]);
+        this.actions.push([Enums.WorldAction.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
     }
 
     /**
@@ -173,10 +173,10 @@ export class World {
             const boost = boostDirection.getMultiple(this.settings.POP_BOOST);
             const poppedCell = new PlayerCell(this.settings, pid, radius, position.getSum(boostDirection.getNormal()), boost);
             poppedMass += poppedCell.getMass();
-            this.actions.push([WorldActions.CREATE_CELL, poppedCell]);
+            this.actions.push([Enums.WorldAction.CREATE_CELL, poppedCell]);
         }
 
-        this.actions.push([WorldActions.UPDATE_CELL, cell, -poppedMass]);
+        this.actions.push([Enums.WorldAction.UPDATE_CELL, cell, -poppedMass]);
     }
 
     /**
@@ -190,7 +190,7 @@ export class World {
             predator = predator.getEater();
         }
         if (predator === prey) return; // move this out of here?, not sure why this is necessary since predator would never equal prey?
-        this.actions.push([WorldActions.EAT, predator, prey]);
+        this.actions.push([Enums.WorldAction.EAT, predator, prey]);
         prey.setEater(predator);
     }
 
@@ -201,16 +201,16 @@ export class World {
         while (this.actions.length > 0) {
             const [action, cell, data] = this.actions.shift();
             switch(action) {
-                case WorldActions.CREATE_CELL:
+                case Enums.WorldAction.CREATE_CELL:
                     this.cells.push(cell);
                     break;
-                case WorldActions.DELETE_CELL:
+                case Enums.WorldAction.DELETE_CELL:
                     this.cells.splice(this.cells.indexOf(cell), 1);
                     break;
-                case WorldActions.UPDATE_CELL:
+                case Enums.WorldAction.UPDATE_CELL:
                     cell.setRadius(areaToRadius(cell.getMass() + data));
                     break;
-                case WorldActions.EAT:
+                case Enums.WorldAction.EAT:
                     let [predator, prey] = [cell, data];
                     predator.setRadius(areaToRadius(predator.getMass() + prey.getMass()));
                     this.cells.splice(this.cells.indexOf(prey), 1);
@@ -295,14 +295,14 @@ export class World {
             if (cell instanceof EjectedCell) cell.checkIfExitedParent();
             if (cell instanceof PlayerCell) {
                 if (cell.getAge() % this.settings.DECAY_RATE <= 500/this.tps) { // this is 500 instead of 1000 because otherwise it decays in 2 subsequent ticks
-                    this.actions.push([WorldActions.UPDATE_CELL, cell, -cell.getMass() * (1-this.settings.DECAY_SCALE)]);
+                    this.actions.push([Enums.WorldAction.UPDATE_CELL, cell, -cell.getMass() * (1-this.settings.DECAY_SCALE)]);
                 }
             }
             if (cell instanceof DeadCell && cell.getAge() > this.settings.DEAD_CELL_LIFETIME) {
-                this.actions.push([WorldActions.DELETE_CELL, cell]);
+                this.actions.push([Enums.WorldAction.DELETE_CELL, cell]);
             }
             if (cell instanceof EjectedCell && cell.getAge() > this.settings.EJECT_LIFETIME) {
-                this.actions.push([WorldActions.DELETE_CELL, cell]);
+                this.actions.push([Enums.WorldAction.DELETE_CELL, cell]);
             }
         }
 
@@ -366,7 +366,7 @@ export class World {
 
                     if (other instanceof Virus) {
                         other.setBoost(cell.getBoost().getNormal().getMultiple(this.settings.VIRUS_PUSH_BOOST));
-                        this.actions.push([WorldActions.DELETE_CELL, cell]);
+                        this.actions.push([Enums.WorldAction.DELETE_CELL, cell]);
                     }
                 }
 

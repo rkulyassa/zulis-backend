@@ -1,3 +1,5 @@
+import * as Enums from "./Enums";
+
 export const enum ClientOpcodes {
     PLAYER_UPDATE = 0,
     SPECTATE = 1,
@@ -46,7 +48,7 @@ export namespace ServerData {
 export type CellData = [
     cellId: number,
     ownerPid: number|null,
-    cellType: 0|1|2|3|4|5,
+    cellType: Enums.CellType,
     x: number,
     y: number,
     radius: number,
