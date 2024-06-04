@@ -1,7 +1,7 @@
 import { App, TemplatedApp, WebSocket } from 'uWebSockets.js';
 import { World } from './services/World';
 import { WorldSettings } from '../types/WorldSettings';
-import { WebSocketData } from "../types/WebSocketData";
+import { WebSocketData } from '../types/WebSocketData';
 import { Vector2 } from '../primitives/geometry/Vector2';
 import { Rectangle } from '../primitives/geometry/Rectangle';
 import { Square } from '../primitives/geometry/Square';
@@ -201,7 +201,7 @@ export class GameServer {
                     viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
                 } else {
                     // @todo get spectate data from controller and query respective viewport
-                    const size: number = this.world.getSetting("WORLD_SIZE");
+                    const size: number = this.world.getSetting('WORLD_SIZE');
                     viewport = new Square(new Vector2(size/2), size);
                 }
 

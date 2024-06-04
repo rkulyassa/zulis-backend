@@ -1,4 +1,4 @@
-import * as Enums from "./Enums";
+import * as Enums from './Enums';
 
 export const enum ClientOpcodes {
     PLAYER_UPDATE = 0,

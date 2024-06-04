@@ -276,7 +276,7 @@ export class World {
             //         }
             //     }
             // }
-            // controller.setInput("toSplit", 0);
+            // controller.setInput('toSplit', 0);
         }
 
         // create quadtree

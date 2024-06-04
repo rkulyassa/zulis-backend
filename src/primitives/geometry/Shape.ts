@@ -1,5 +1,5 @@
-import { Rectangle } from "./Rectangle";
-import { Vector2 } from "./Vector2";
+import { Rectangle } from './Rectangle';
+import { Vector2 } from './Vector2';
 
 export abstract class Shape {
     protected center: Vector2;

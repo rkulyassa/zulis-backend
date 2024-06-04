@@ -1,6 +1,6 @@
-import { Vector2 } from "../primitives/geometry/Vector2";
+import { Vector2 } from '../primitives/geometry/Vector2';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketData } from "../types/WebSocketData";
+import { WebSocketData } from '../types/WebSocketData';
 
 const encoder = new TextEncoder();
 
