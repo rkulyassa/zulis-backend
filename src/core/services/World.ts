@@ -257,26 +257,18 @@ export class World {
             }
 
             // handle split cells
+            let tempCellCount = playerCells.length;
             const toSplit = controller.getToSplit();
             if (toSplit > 0) {
                 for (const cell of playerCells) {
-                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT) {
+                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && tempCellCount < this.settings.MAX_CELLS) {
                         const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
                         this.splitCell(cell, splitDirection);
+                        tempCellCount += 1;
                     }
                 }
                 controller.setToSplit(toSplit-1);
             }
-
-            // handle split cells
-            // for (let i = input.toSplit; i > 0; i--) {
-            //     for (const cell of this.getCellsByPid(pid)) {
-            //         if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT) {
-            //             this.splitCell(cell, targetPoint.getDifference(cell.getPosition()).getNormal());
-            //         }
-            //     }
-            // }
-            // controller.setInput('toSplit', 0);
         }
 
         // create quadtree
