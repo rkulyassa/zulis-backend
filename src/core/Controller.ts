@@ -1,34 +1,30 @@
 import { Vector2 } from "../primitives/geometry/Vector2";
-import { Input } from "../types/Input";
 import { WebSocket } from 'uWebSockets.js';
-import { UserData } from "../types/UserData";
+import { WebSocketData } from "../types/WebSocketData";
 
 const encoder = new TextEncoder();
 
-export declare type Status = 'menu'|'playing'|'spectating';
-
 export class Controller {
     private pid: number;
-    private ws: WebSocket<UserData>;
-    private status: Status;
+    private ws: WebSocket<WebSocketData>;
+    private playing: boolean;
     private nick: string;
     private skinId: string;
     private teamTag: string;
-    private input: Input;
+    private mouseVector: Vector2;
+    private ejecting: boolean;
+    private toSplit: number;
     private ejectTick: number;
     
-    constructor(pid: number, ws: WebSocket<UserData>) {
+    constructor(pid: number, ws: WebSocket<WebSocketData>) {
         this.pid = pid;
         this.ws = ws;
-        this.nick = `Player ${pid}`;
-        this.skinId = 'abcdefgh';
+        this.nick = `An unnamed cell`;
+        this.skinId = 'zulis1';
         this.teamTag = '';
-        this.status = 'menu';
-        this.input = {
-            mouseVector: new Vector2(0),
-            isEjecting: false,
-            toSplit: 0
-        };
+        this.playing = false;
+        this.mouseVector = new Vector2(0);
+        this.ejecting = false;
         this.ejectTick = 0;
     }
 
@@ -36,34 +32,53 @@ export class Controller {
         return this.pid;
     }
 
-    getStatus(): Status {
-        return this.status;
-    }
-    setStatus(status: Status): void {
-        this.status = status;
-    }
-
     getNick(): string {
         return this.nick;
+    }
+    setNick(nick: string): void {
+        this.nick = nick;
     }
 
     getSkinId(): string {
         return this.skinId;
     }
+    setSkinId(skinId: string): void {
+        this.skinId = skinId;
+    }
 
     getTeamTag(): string {
         return this.teamTag;
     }
-
-    getInput(): Input {
-        return {
-            mouseVector: this.input.mouseVector,
-            isEjecting: this.input.isEjecting,
-            toSplit: this.input.toSplit
-        }
+    setTeamTag(teamTag: string): void {
+        this.teamTag = teamTag;
     }
-    setInput<K extends keyof Input>(input: K, value: Input[K]) {
-        this.input[input] = value;
+
+    isPlaying(): boolean {
+        return this.playing;
+    }
+    setAsPlaying(playing: boolean): void {
+        this.playing = playing;
+    }
+
+    getMouseVector(): Vector2 {
+        return this.mouseVector;
+    }
+    setMouseVectorFromValues(dx: number, dy: number): void {
+        this.mouseVector.set(dx, dy);
+    }
+
+    isEjecting(): boolean {
+        return this.ejecting;
+    }
+    setAsEjecting(ejecting: boolean): void {
+        this.ejecting = ejecting;
+    }
+
+    getToSplit(): number {
+        return this.toSplit;
+    }
+    setToSplit(toSplit: number) {
+        this.toSplit = toSplit;
     }
 
     getEjectTick(): number {

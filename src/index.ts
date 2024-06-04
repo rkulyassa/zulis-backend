@@ -11,6 +11,8 @@ const gameServers: Array<GameServer> = [
     // new GameServer(PORT+2, 'Giga 1', 'eu', 20, 35, Gamemodes.Mega),
 ];
 
+for (const gameServer of gameServers) gameServer.start();
+
 app.get('/gameservers.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     const data = {
@@ -31,5 +33,3 @@ app.get('/gameservers.json', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
-
-for (const gameServer of gameServers) gameServer.start();

@@ -222,9 +222,9 @@ export class World {
         // handle all connected players' input
         for (const controller of this.controllers) {
             const pid = controller.getPid();
-            const input = controller.getInput();
+            const mouseVector = controller.getMouseVector();
             const playerCells = this.getPlayerCellsByPid(pid);
-            const targetPoint = Physics.getCellsCenterOfMass(playerCells).getSum(input.mouseVector);
+            const targetPoint = Physics.getCellsCenterOfMass(playerCells).getSum(mouseVector);
 
             for (const cell of playerCells) {
 
@@ -242,7 +242,7 @@ export class World {
                 }
 
                 // handle ejecting
-                if (input.isEjecting) {
+                if (controller.isEjecting()) {
                     let ejectDelayTick = controller.getEjectTick();
                     if (ejectDelayTick > 0) {
                         controller.setEjectTick(ejectDelayTick - 1000/this.tps);
@@ -257,14 +257,15 @@ export class World {
             }
 
             // handle split cells
-            if (input.toSplit > 0) {
+            const toSplit = controller.getToSplit();
+            if (toSplit > 0) {
                 for (const cell of playerCells) {
                     if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT) {
                         const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
                         this.splitCell(cell, splitDirection);
                     }
                 }
-                controller.setInput("toSplit", input.toSplit-1);
+                controller.setToSplit(toSplit-1);
             }
 
             // handle split cells

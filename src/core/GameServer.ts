@@ -1,12 +1,12 @@
 import { App, TemplatedApp, WebSocket } from 'uWebSockets.js';
 import { World } from './services/World';
 import { WorldSettings } from '../types/WorldSettings';
-import { UserData } from "../types/UserData";
+import { WebSocketData } from "../types/WebSocketData";
 import { Vector2 } from '../primitives/geometry/Vector2';
 import { Rectangle } from '../primitives/geometry/Rectangle';
 import { Square } from '../primitives/geometry/Square';
 import { PlayerCell } from './cells/PlayerCell';
-import { Controller, Status } from './Controller';
+import { Controller } from './Controller';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
@@ -85,7 +85,7 @@ export class GameServer {
      * Handles a new incoming connection.
      * @param ws - The incoming connection.
      */
-    onConnection(ws: WebSocket<UserData>): void {
+    onConnection(ws: WebSocket<WebSocketData>): void {
         const pid = this.pidIndex;
         this.pidIndex += 1;
         ws.getUserData().pid = pid;
@@ -96,15 +96,6 @@ export class GameServer {
         const data: Protocol.ServerData.LOAD_WORLD = this.world.getSetting('WORLD_SIZE');
         newController.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, data]);
 
-        for (const controller of this.world.getControllers()) {
-            if (controller === newController) continue;
-            const nick = controller.getNick();
-            const skinId = controller.getSkinId();
-            const inTag = newController.getTeamTag() === controller.getTeamTag();
-            const data: Protocol.ServerData.PLAYER_UPDATE = [pid, skinId, nick, inTag];
-            controller.sendWS([Protocol.ServerOpcodes.PLAYER_UPDATE, data]);
-        }
-
         console.log(`Player joined (pid: ${pid})`);
     }
 
@@ -114,34 +105,45 @@ export class GameServer {
      * @param message - The data of the message.
      * @param isBinary
      */
-    onMessage(client: WebSocket<UserData>, message: ArrayBuffer, isBinary: boolean): void {
+    onMessage(client: WebSocket<WebSocketData>, message: ArrayBuffer, isBinary: boolean): void {
         const pid: number = client.getUserData().pid;
         const controller: Controller = this.world.getControllerByPid(pid);
         const [opcode, data]: [number, any] = JSON.parse(decoder.decode(message));
         switch (opcode) {
-            case Protocol.ClientOpcodes.SPAWN:
-                if (controller.getStatus() !== 'playing') {
-                    controller.setStatus('playing');
+            case Protocol.ClientOpcodes.PLAYER_UPDATE:
+                const [nick, skinId, teamTag]: Protocol.ClientData.PLAYER_UPDATE = data;
+                controller.setNick(nick);
+                controller.setSkinId(skinId);
+                controller.setTeamTag(teamTag);
+
+                // replicate playerData update to rest of clients
+                for (const other of this.world.getControllers()) {
+                    const inTag: boolean = teamTag === other.getTeamTag();
+                    const replicatedData: Protocol.ServerData.PLAYER_UPDATE = [pid, nick, skinId, inTag];
+                    other.sendWS([Protocol.ServerOpcodes.PLAYER_UPDATE, replicatedData]);
+                }
+
+                if (!controller.isPlaying()) {
+                    controller.setAsPlaying(true);
                     this.world.spawnPlayerCell(pid);
                 }
                 break;
             case Protocol.ClientOpcodes.SPECTATE:
-                if (controller.getStatus() === 'playing') return;
+                if (controller.isPlaying()) return;
                 const [spectateLock, cellId]: Protocol.ClientData.SPECTATE = data;
-                controller.setStatus('spectating');
                 // @todo finish spectate mode - set data on controller
                 break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
                 const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = data;
-                controller.setInput('mouseVector', new Vector2(dx, dy));
+                controller.setMouseVectorFromValues(dx, dy);
                 break;
             case Protocol.ClientOpcodes.TOGGLE_FEED:
                 const isFeeding: Protocol.ClientData.TOGGLE_FEED = data;
-                controller.setInput('isEjecting', isFeeding);
+                controller.setAsEjecting(isFeeding);
                 break;
             case Protocol.ClientOpcodes.SPLIT:
                 const macro: Protocol.ClientData.SPLIT = data;
-                controller.setInput('toSplit', data);
+                controller.setToSplit(macro);
                 break;
             case Protocol.ClientOpcodes.STOP_MOVEMENT:
                 break;
@@ -163,7 +165,7 @@ export class GameServer {
      * @param code
      * @param message 
      */
-    onClose(ws: WebSocket<UserData>, code: number, message: ArrayBuffer) {
+    onClose(ws: WebSocket<WebSocketData>, code: number, message: ArrayBuffer) {
         const pid: number = ws.getUserData().pid;
         this.world.disconnectPlayerCellsByPid(pid);
         this.world.removeControllerByPid(pid);
@@ -193,16 +195,11 @@ export class GameServer {
                 const pid: number = controller.getPid();
 
                 let viewport: Square;
-                const status: Status = controller.getStatus();
                 const playerCells: Array<PlayerCell> = this.world.getPlayerCellsByPid(pid);
-
-                if (status === 'menu') {
-                    const size: number = this.world.getSetting("WORLD_SIZE");
-                    viewport = new Square(new Vector2(size/2), size);
-                } else if (status === 'playing') {
-                    const threshold: number = 500; // @todo: move this into settings somewhere
+                if (controller.isPlaying()) {
+                    const threshold: number = 1000; // @todo: move this into settings somewhere
                     viewport = new Square(Physics.getCellsCenterOfMass(playerCells), threshold);
-                } else if (status === 'spectating') {
+                } else {
                     // @todo get spectate data from controller and query respective viewport
                     const size: number = this.world.getSetting("WORLD_SIZE");
                     viewport = new Square(new Vector2(size/2), size);
@@ -212,19 +209,6 @@ export class GameServer {
                 const cells: Array<Protocol.CellData> = this.getCellsPacket(viewport);
                 const data: Protocol.ServerData.UPDATE_GAME_STATE = [viewportX, viewportY, cells];
                 controller.sendWS([Protocol.ServerOpcodes.UPDATE_GAME_STATE, data]);
-
-                if (this.age % 1000 <= this.tps) {
-                    const ping: number = 0; // @todo: calculate ping per client
-                    if (status === 'playing') {
-                        const totalMass: number = playerCells.reduce((sum, cell) => sum += cell.getMass(), 0);
-                        const cellCount: number = playerCells.length;
-                        const data: Protocol.ServerData.STATS_UPDATE = [ping, totalMass, cellCount];
-                        controller.sendWS([Protocol.ServerOpcodes.STATS_UPDATE, data]);
-                    } else {
-                        const data: Protocol.ServerData.STATS_UPDATE = [ping, null, null];
-                        controller.sendWS([Protocol.ServerOpcodes.STATS_UPDATE, data]);
-                    }
-                }
 
                 this.age += 1000/this.tps;
             }

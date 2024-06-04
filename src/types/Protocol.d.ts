@@ -1,5 +1,5 @@
 export const enum ClientOpcodes {
-    SPAWN = 0,
+    PLAYER_UPDATE = 0,
     SPECTATE = 1,
     MOUSE_MOVE = 2,
     TOGGLE_FEED = 3,
@@ -11,7 +11,7 @@ export const enum ClientOpcodes {
 }
 
 export namespace ClientData {
-    type SPAWN = null;
+    type PLAYER_UPDATE = [nick: string, skinId: string, teamTag: string];
     type SPECTATE = [spectateLock: boolean, cellId: number|null];
     type MOUSE_MOVE = [dx: number, dy: number];
     type TOGGLE_FEED = boolean;
@@ -25,8 +25,7 @@ export namespace ClientData {
 export const enum ServerOpcodes {
     LOAD_WORLD = 0,
     UPDATE_GAME_STATE = 1,
-    STATS_UPDATE = 2,
-    PLAYER_UPDATE = 3,
+    PLAYER_UPDATE = 2,
 }
 
 export namespace ServerData {
@@ -42,11 +41,6 @@ export namespace ServerData {
         skinId: string|null,
         inTag: boolean,
     ];
-    type STATS_UPDATE = [
-        ping: number,
-        totalMass: number|null,
-        cellCount: number|null,
-    ]
 }
 
 export type CellData = [
