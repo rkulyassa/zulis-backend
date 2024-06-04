@@ -143,7 +143,7 @@ export class GameServer {
                 break;
             case Protocol.ClientOpcodes.SPLIT:
                 const macro: Protocol.ClientData.SPLIT = data;
-                controller.setToSplit(macro);
+                controller.setToSplit(macro+1);
                 break;
             case Protocol.ClientOpcodes.STOP_MOVEMENT:
                 break;

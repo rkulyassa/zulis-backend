@@ -1,5 +1,5 @@
-import { Cell } from "../cells/Cell";
-import { Vector2 } from "../../primitives/geometry/Vector2";
+import { Cell } from '../cells/Cell';
+import { Vector2 } from '../../primitives/geometry/Vector2';
 
 /**
  * Separates two {@link Cell}s by moving them along their difference normal.
