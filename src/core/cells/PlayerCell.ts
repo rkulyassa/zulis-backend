@@ -1,7 +1,7 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { WorldSettings } from '../../types/WorldSettings';
-import { CellTypes } from '../../types/Enums';
+import * as Enums from '../../types/Enums';
 
 export class PlayerCell extends Cell {
     private ownerPid: number;
@@ -16,8 +16,8 @@ export class PlayerCell extends Cell {
         return this.ownerPid;
     }
 
-    getTypeEnum(): CellTypes {
-        return CellTypes.PLAYER_CELL;
+    getTypeEnum(): Enums.CellType {
+        return Enums.CellType.PLAYER_CELL;
     }
 
     isSplitting(): boolean {

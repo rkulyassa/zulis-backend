@@ -3,7 +3,7 @@ import { WorldSettings } from '../../types/WorldSettings';
 import { PlayerCell } from './PlayerCell';
 import { Circle } from '../../primitives/geometry/Circle';
 import { Square } from '../../primitives/geometry/Square';
-import { CellTypes } from '../../types/Enums';
+import * as Enums from '../../types/Enums';
 
 export abstract class Cell {
     static index: number = 0;
@@ -83,7 +83,7 @@ export abstract class Cell {
         return this.getBoundary().getArea();
     }
 
-    abstract getTypeEnum(): CellTypes;
+    abstract getTypeEnum(): Enums.CellType;
 
     stepMotion(): void {
         this.position.add(this.velocity);
