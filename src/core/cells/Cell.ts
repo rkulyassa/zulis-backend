@@ -1,7 +1,7 @@
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { Circle } from '../../primitives/geometry/Circle';
 import { Square } from '../../primitives/geometry/Square';
-import * as Enums from '../../types/CellType.enum';
+import { CellType } from '../../types/CellType.enum';
 
 export abstract class Cell {
     private static index: number = 0;
@@ -79,7 +79,7 @@ export abstract class Cell {
         return this.getBoundary().getArea();
     }
 
-    abstract getTypeEnum(): Enums.CellType;
+    abstract getTypeEnum(): CellType;
 
     stepMotion(worldFriction: number): void {
         this.position.add(this.velocity);

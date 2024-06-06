@@ -1,15 +1,15 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { Square } from '../../primitives/geometry/Square';
-import * as Enums from '../../types/CellType.enum';
+import { CellType } from '../../types/CellType.enum';
 
 export class Virus extends Cell {
     constructor(radius: number, position: Vector2) {
         super(radius, position, new Vector2(0), new Vector2(0));
     }
 
-    getTypeEnum(): Enums.CellType {
-        return Enums.CellType.VIRUS;
+    getTypeEnum(): CellType {
+        return CellType.VIRUS;
     }
 
     override tick() {}

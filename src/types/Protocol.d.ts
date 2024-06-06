@@ -1,4 +1,4 @@
-import * as Enums from './CellType.enum';
+import { CellType } from "./CellType.enum";
 
 export const enum ClientOpcodes {
     PLAYER_UPDATE = 0,
@@ -48,7 +48,7 @@ export namespace ServerData {
 export type CellData = [
     cellId: number,
     ownerPid: number|null,
-    cellType: Enums.CellType,
+    cellType: CellType,
     x: number,
     y: number,
     radius: number,

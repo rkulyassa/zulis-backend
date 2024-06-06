@@ -1,6 +1,6 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
-import * as Enums from '../../types/CellType.enum';
+import { CellType } from '../../types/CellType.enum';
 
 export class PlayerCell extends Cell {
     private ownerPid: number;
@@ -14,7 +14,7 @@ export class PlayerCell extends Cell {
         return this.ownerPid;
     }
 
-    getTypeEnum(): Enums.CellType {
-        return Enums.CellType.PLAYER_CELL;
+    getTypeEnum(): CellType {
+        return CellType.PLAYER_CELL;
     }
 }
