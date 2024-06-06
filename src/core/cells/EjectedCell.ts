@@ -2,9 +2,8 @@ import { Cell } from './Cell';
 import { PlayerCell } from './PlayerCell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { areIntersecting } from '../../primitives/geometry/Utils';
-import { WorldSettings } from '../../types/WorldSettings';
 import { Square } from '../../primitives/geometry/Square';
-import * as Enums from '../../types/Enums';
+import * as Enums from '../../types/CellType.enum';
 
 export class EjectedCell extends Cell {
     private ejectParent: PlayerCell;

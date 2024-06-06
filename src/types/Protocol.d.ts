@@ -1,4 +1,4 @@
-import * as Enums from './Enums';
+import * as Enums from './CellType.enum';
 
 export const enum ClientOpcodes {
     PLAYER_UPDATE = 0,

@@ -1,9 +1,7 @@
 import { Vector2 } from '../../primitives/geometry/Vector2';
-import { WorldSettings } from '../../types/WorldSettings';
-import { PlayerCell } from './PlayerCell';
 import { Circle } from '../../primitives/geometry/Circle';
 import { Square } from '../../primitives/geometry/Square';
-import * as Enums from '../../types/Enums';
+import * as Enums from '../../types/CellType.enum';
 
 export abstract class Cell {
     private static index: number = 0;

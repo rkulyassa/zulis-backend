@@ -1,7 +1,6 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
-import { WorldSettings } from '../../types/WorldSettings';
-import * as Enums from '../../types/Enums';
+import * as Enums from '../../types/CellType.enum';
 
 export class Pellet extends Cell {
     constructor(radius: number, position: Vector2) {

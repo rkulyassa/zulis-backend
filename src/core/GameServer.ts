@@ -7,6 +7,7 @@ import { Rectangle } from '../primitives/geometry/Rectangle';
 import { Square } from '../primitives/geometry/Square';
 import { PlayerCell } from './cells/PlayerCell';
 import { Controller } from './Controller';
+import { Region } from '../types/Region.enum';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
@@ -18,14 +19,14 @@ export class GameServer {
     private port: number;
     private age: number;
     private name: string;
-    private region: string;
+    private region: Region;
     private tps: number;
     private capacity: number;
     private pidIndex: number;
     private world: World;
     private liveUpdate: ReturnType<typeof setInterval>;
 
-    constructor(basePort: number, name: string, region: string, tps: number, capacity: number, worldSettings: WorldSettings) {
+    constructor(basePort: number, name: string, region: Region, tps: number, capacity: number, worldSettings: WorldSettings) {
         this.uWSApp = App();
         this.port = basePort + GameServer.portOffset;
         GameServer.portOffset++;
@@ -46,8 +47,18 @@ export class GameServer {
         return this.name;
     }
 
-    getRegion(): string {
+    getRegion(): Region {
         return this.region;
+    }
+    getRegionAsString(): string {
+        switch (this.region) {
+            case Region.NA:
+                return 'na';
+            case Region.EU:
+                return 'eu';
+            case Region.AS:
+                return 'as';
+        }
     }
 
     getCapacity(): number {

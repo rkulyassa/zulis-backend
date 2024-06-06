@@ -1,7 +1,6 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
-import { WorldSettings } from '../../types/WorldSettings';
-import * as Enums from '../../types/Enums';
+import * as Enums from '../../types/CellType.enum';
 
 export class PlayerCell extends Cell {
     private ownerPid: number;
@@ -17,15 +16,5 @@ export class PlayerCell extends Cell {
 
     getTypeEnum(): Enums.CellType {
         return Enums.CellType.PLAYER_CELL;
-    }
-
-    // isSplitting(splitResolveDelay: number): boolean {
-    //     return this.age < splitResolveDelay;
-    // }
-
-    canMerge(mergeTime: number, mergeTimeScale: number): boolean {
-        const initial = mergeTime
-        const increase = this.getBoundary().getArea() * mergeTimeScale;
-        return this.age >= initial + increase;
     }
 }
