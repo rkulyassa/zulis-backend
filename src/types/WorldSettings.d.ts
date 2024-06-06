@@ -1,6 +1,7 @@
 export interface WorldSettings {
     // World
     WORLD_EAT_OVERLAP_REQ: number;
+    WORLD_EAT_SIZE_REQ: number;
     WORLD_FRICTION: number;
     WORLD_SIZE: number;
 

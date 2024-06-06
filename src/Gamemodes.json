@@ -2,6 +2,7 @@
     "FFA": {},
     "Mega": {
         "WORLD_EAT_OVERLAP_REQ": 0.35,
+        "WORLD_EAT_SIZE_REQ": 1.2,
         "WORLD_FRICTION": 0.95,
         "WORLD_SIZE": 500,
 

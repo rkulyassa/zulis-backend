@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^20.14.1",
+    "buffer": "^6.0.3",
     "express": "^4.19.2",
     "ts-node": "^10.9.2",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.42.0"

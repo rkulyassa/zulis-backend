@@ -1,18 +1,18 @@
-import { WorldSettings } from '../../types/WorldSettings';
-import { Cell } from '../cells/Cell';
-import { PlayerCell } from '../cells/PlayerCell';
-import { Pellet } from '../cells/Pellet';
-import { EjectedCell } from '../cells/EjectedCell';
-import { Virus } from '../cells/Virus';
-import { DeadCell } from '../cells/DeadCell';
-import { Vector2 } from '../../primitives/geometry/Vector2';
-import { Quadtree } from '../../primitives/Quadtree';
-import { Square } from '../../primitives/geometry/Square';
-import { areaToRadius, areIntersecting } from '../../primitives/geometry/Utils';
-import { randomInt, randomFromInterval } from '../../primitives/Misc';
-import { Controller } from '../Controller';
-import * as Enums from '../../types/Enums';
-import * as Physics from './Physics';
+import { WorldSettings } from '../types/WorldSettings';
+import { Cell } from './cells/Cell';
+import { PlayerCell } from './cells/PlayerCell';
+import { Pellet } from './cells/Pellet';
+import { EjectedCell } from './cells/EjectedCell';
+import { Virus } from './cells/Virus';
+import { DeadCell } from './cells/DeadCell';
+import { Vector2 } from '../primitives/geometry/Vector2';
+import { Quadtree } from '../primitives/Quadtree';
+import { Square } from '../primitives/geometry/Square';
+import { areaToRadius, areIntersecting } from '../primitives/geometry/Utils';
+import { randomInt, randomFromInterval } from '../primitives/Misc';
+import { Controller } from './Controller';
+import * as Enums from '../types/Enums';
+import * as Physics from './services/Physics';
 
 export class World {
     private settings: WorldSettings;
@@ -65,7 +65,7 @@ export class World {
     spawnPlayerCell(pid: number): void {
         const radius = areaToRadius(this.settings.SPAWN_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
-        const newCell = new PlayerCell(this.settings, pid, radius, spawnPos, new Vector2(0));
+        const newCell = new PlayerCell(pid, radius, spawnPos, new Vector2(0));
 
         for (const cell of this.cells) {
             if (cell instanceof Virus && areIntersecting(newCell.getBoundary(), cell.getBoundary())) {
@@ -83,7 +83,7 @@ export class World {
     spawnPellet(): void {
         const radius = areaToRadius(this.settings.PELLET_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
-        const pellet = new Pellet(this.settings, radius, spawnPos);
+        const pellet = new Pellet(radius, spawnPos);
         this.actions.push([Enums.WorldAction.CREATE_CELL, pellet]);
     }
 
@@ -94,7 +94,7 @@ export class World {
     spawnVirus(): void {
         const radius = areaToRadius(this.settings.VIRUS_MASS);
         const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
-        const virus = new Virus(this.settings, radius, spawnPos);
+        const virus = new Virus(radius, spawnPos);
         this.actions.push([Enums.WorldAction.CREATE_CELL, virus]);
     }
 
@@ -116,7 +116,7 @@ export class World {
         const playerCells = this.getPlayerCellsByPid(pid);
         for (const playerCell of playerCells) {
             this.actions.push([Enums.WorldAction.DELETE_CELL, playerCell]);
-            this.actions.push([Enums.WorldAction.CREATE_CELL, new DeadCell(this.settings, playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
+            this.actions.push([Enums.WorldAction.CREATE_CELL, new DeadCell(playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
         }
     }
 
@@ -131,7 +131,7 @@ export class World {
         const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/2);
         const position = cell.getPosition().getSum(direction);
         const boost = direction.getMultiple(this.settings.SPLIT_BOOST);
-        const newCell = new PlayerCell(this.settings, pid, radius, position, boost);
+        const newCell = new PlayerCell(pid, radius, position, boost);
         this.actions.push([Enums.WorldAction.CREATE_CELL, newCell]);
         this.actions.push([Enums.WorldAction.UPDATE_CELL, cell, -newCell.getMass()]);
     }
@@ -147,7 +147,7 @@ export class World {
         const spawnPos = cell.getPosition().getSum(direction.getMultiple(cell.getRadius()));
         const dispersion = randomFromInterval(-this.settings.EJECT_DISPERSION, this.settings.EJECT_DISPERSION);
         const boost = direction.getMultiple(this.settings.EJECT_BOOST).getRotated(dispersion);
-        const ejectedCell = new EjectedCell(this.settings, radius, spawnPos, boost, cell);
+        const ejectedCell = new EjectedCell(radius, spawnPos, boost, cell);
         this.actions.push([Enums.WorldAction.CREATE_CELL, ejectedCell]);
         this.actions.push([Enums.WorldAction.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
     }
@@ -171,7 +171,7 @@ export class World {
         for (let i = 0; i < poppedCount; i++) {
             const boostDirection = Vector2.fromAngle(randomFromInterval(0, 2*Math.PI));
             const boost = boostDirection.getMultiple(this.settings.POP_BOOST);
-            const poppedCell = new PlayerCell(this.settings, pid, radius, position.getSum(boostDirection.getNormal()), boost);
+            const poppedCell = new PlayerCell(pid, radius, position.getSum(boostDirection.getNormal()), boost);
             poppedMass += poppedCell.getMass();
             this.actions.push([Enums.WorldAction.CREATE_CELL, poppedCell]);
         }
@@ -180,18 +180,51 @@ export class World {
     }
 
     /**
-     * Handles a {@link Cell}'s consumption of another.
-     * Enqueues the eat action of the two {@link Cell}s.
-     * @param predator - The larger {@link Cell} that will consume the {@link prey}.
-     * @param prey - The smaller {@link Cell} that will be consumed by the {@link predator}.
+     * Checks whether a {@link Cell} can eat another, and handles accordingly.
+     * Checks two conditions for eating: overlap and size.
+     * If successful, enqueues the eat action of the two {@link Cell}s.
+     * @param predator - The larger {@link Cell} to eat the {@link prey}.
+     * @param prey - The smaller {@link Cell} to be ate by the {@link predator}.
+     * @returns Whether the eat was successful.
      */
-    resolveEat(predator: Cell, prey: Cell): void {
-        while(predator.getEater() !== null) { // traverse linked list
+    resolveEat(predator: Cell, prey: Cell): boolean {
+        if (prey.getEater()) return false; // other cell has already been ate in the tick
+
+        let overlapReq: boolean, sizeReq: boolean;
+
+        // calculate overlap requirement
+        const d = predator.getPosition().getDifference(prey.getPosition()).getMagnitude();
+        const overlap = predator.getRadius() - prey.getRadius() * this.settings.WORLD_EAT_OVERLAP_REQ;
+        overlapReq = d <= overlap;
+
+        // calculcate size requirement
+        if (predator instanceof PlayerCell && prey instanceof PlayerCell && predator.getOwnerPid() === prey.getOwnerPid()) {
+            sizeReq = true; // ignore size requirement if cells are owned by the same player
+        } else {
+            sizeReq = predator.getMass() > prey.getMass() * this.settings.WORLD_EAT_SIZE_REQ;
+        }
+
+        if (!overlapReq || !sizeReq) return false; // both checks must pass
+
+        while(predator.getEater() !== null) { // traverse linked list if predator was already ate in the tick
             predator = predator.getEater();
         }
-        if (predator === prey) return; // move this out of here?, not sure why this is necessary since predator would never equal prey?
+        if (predator === prey) return false; // @todo: not sure why this is necessary since idk how predator would equal prey?
+
         this.actions.push([Enums.WorldAction.EAT, predator, prey]);
         prey.setEater(predator);
+    }
+
+    /**
+     * Checks whether two {@link PlayerCell}s can merge.
+     * @param a - The first {@link PlayerCell}.
+     * @param b - The other {@link PlayerCell}.
+     * @returns Whether the two {@link PlayerCells} can merge.
+     */
+    canMerge(a: PlayerCell, b: PlayerCell): boolean {
+        const aTime = this.settings.MERGE_TIME + a.getBoundary().getArea() * this.settings.MERGE_TIME_SCALE;
+        const bTime = this.settings.MERGE_TIME + b.getBoundary().getArea() * this.settings.MERGE_TIME_SCALE;
+        return a.getAge() >= aTime && b.getAge() >= bTime;
     }
 
     tick(tps: number): void {
@@ -276,7 +309,7 @@ export class World {
 
         for (const cell of this.cells) {
             // cells moved prior to insertion
-            cell.stepMotion();
+            cell.stepMotion(this.settings.WORLD_FRICTION);
             cell.handleWallBounce(this.boundary);
 
             //insert cells
@@ -311,40 +344,34 @@ export class World {
                 if (cell instanceof PlayerCell) {
                     if (other instanceof PlayerCell) {
                         if (cell.getOwnerPid() === other.getOwnerPid()) {
-                            if (cell.canMerge() && other.canMerge()) {
-                                if (cell.canEat(other)) {
-                                    this.resolveEat(cell, other);
-                                }
-                            } else if (!cell.isSplitting() && !other.isSplitting()) {
+                            if (this.canMerge(cell, other)) {
+                                this.resolveEat(cell, other);
+                            } else if (cell.getAge() >= this.settings.SPLIT_RESOLVE_DELAY && other.getAge() >= this.settings.SPLIT_RESOLVE_DELAY) {
                                 Physics.resolveCollision(cell, other);
                             }
-                        } else if (cell.canEat(other)) {
+                        } else {
                             this.resolveEat(cell, other);
                         }
                     }
 
                     if (other instanceof EjectedCell) {
-                        if ((other.hasExitedParent() || other.getAge() > 0) && cell.canEat(other)) {
+                        if ((other.hasExitedParent() || other.getAge() > 0)) {
                             this.resolveEat(cell, other);
                         }
                     }
 
                     if (other instanceof Pellet) {
-                        if (cell.canEat(other)) {
-                            this.resolveEat(cell, other);
+                        if (this.resolveEat(cell, other)) {
                             this.spawnPellet();
                         }
                     }
 
                     if (other instanceof DeadCell) {
-                        if (cell.canEat(other)) {
-                            this.resolveEat(cell, other);
-                        }
+                        this.resolveEat(cell, other);
                     }
 
                     if (other instanceof Virus) {
-                        if (cell.canEat(other)) {
-                            this.resolveEat(cell, other);
+                        if (this.resolveEat(cell, other)) {
                             this.popCell(cell);
                             this.spawnVirus();
                         }

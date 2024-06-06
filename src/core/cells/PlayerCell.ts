@@ -6,9 +6,8 @@ import * as Enums from '../../types/Enums';
 export class PlayerCell extends Cell {
     private ownerPid: number;
 
-    constructor(settings: WorldSettings, ownerPid: number, radius: number, position: Vector2, boost: Vector2) {
-        super(settings, radius, position, new Vector2(0), boost);
-        this.settings = settings;
+    constructor(ownerPid: number, radius: number, position: Vector2, boost: Vector2) {
+        super(radius, position, new Vector2(0), boost);
         this.ownerPid = ownerPid;
     }
 
@@ -20,13 +19,13 @@ export class PlayerCell extends Cell {
         return Enums.CellType.PLAYER_CELL;
     }
 
-    isSplitting(): boolean {
-        return this.age < this.settings.SPLIT_RESOLVE_DELAY;
-    }
+    // isSplitting(splitResolveDelay: number): boolean {
+    //     return this.age < splitResolveDelay;
+    // }
 
-    canMerge(): boolean {
-        const initial = this.settings.MERGE_TIME;
-        const increase = this.getBoundary().getArea() * this.settings.MERGE_TIME_SCALE;
+    canMerge(mergeTime: number, mergeTimeScale: number): boolean {
+        const initial = mergeTime
+        const increase = this.getBoundary().getArea() * mergeTimeScale;
         return this.age >= initial + increase;
     }
 }

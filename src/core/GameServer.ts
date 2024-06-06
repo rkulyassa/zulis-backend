@@ -1,5 +1,5 @@
 import { App, TemplatedApp, WebSocket } from 'uWebSockets.js';
-import { World } from './services/World';
+import { World } from './World';
 import { WorldSettings } from '../types/WorldSettings';
 import { WebSocketData } from '../types/WebSocketData';
 import { Vector2 } from '../primitives/geometry/Vector2';
@@ -13,6 +13,7 @@ import * as Physics from './services/Physics';
 const decoder = new TextDecoder();
 
 export class GameServer {
+    private static portIndex: number;
     private uWSApp: TemplatedApp;
     private port: number;
     private age: number;

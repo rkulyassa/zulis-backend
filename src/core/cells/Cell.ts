@@ -6,9 +6,8 @@ import { Square } from '../../primitives/geometry/Square';
 import * as Enums from '../../types/Enums';
 
 export abstract class Cell {
-    static index: number = 0;
+    private static index: number = 0;
     private id: number;
-    protected settings: WorldSettings;
     private radius: number;
     protected position: Vector2;
     private velocity: Vector2;
@@ -16,10 +15,9 @@ export abstract class Cell {
     protected age: number = 0;
     private eater: Cell = null;
 
-    constructor(settings: WorldSettings, radius: number, position: Vector2, velocity: Vector2, boost: Vector2) {
+    constructor(radius: number, position: Vector2, velocity: Vector2, boost: Vector2) {
         this.id = Cell.index;
         Cell.index++;
-        this.settings = settings;
         this.radius = radius;
         this.position = position;
         this.velocity = velocity;
@@ -85,10 +83,10 @@ export abstract class Cell {
 
     abstract getTypeEnum(): Enums.CellType;
 
-    stepMotion(): void {
+    stepMotion(worldFriction: number): void {
         this.position.add(this.velocity);
         this.position.add(this.boost);
-        this.boost.multiply(this.settings.WORLD_FRICTION);
+        this.boost.multiply(worldFriction);
     }
 
     handleWallBounce(worldBoundary: Square): void {
@@ -111,21 +109,10 @@ export abstract class Cell {
         }
     }
 
-    canEat(other: Cell): boolean {
-        if (other.getEater()) return false; // other cell has already been eaten
-
-        const d = this.getPosition().getDifference(other.getPosition()).getMagnitude();
-        const overlapReq = d <= this.getRadius() - other.getRadius() * this.settings.WORLD_EAT_OVERLAP_REQ;
-        
-        // let sizeReq;
-        if (other instanceof PlayerCell) { // ignore size check in merge case
-            return overlapReq;
-        } else {
-            const sizeReq = this.getMass() > other.getMass() * 1.2;
-            return overlapReq && sizeReq;
-        }
-    }
-
+    /**
+     * Was used for debugging long ago, not really necessary anymore
+     * @todo remove?
+     */
     toString(): string {
         // return `${this.constructor.name} [${this.id}] at (${Math.round(this.position.getX())}, ${Math.round(this.position.getY())}) with (${Math.round(this.getMass())}, ${Math.round(this.radius)})`;
         return `${this.constructor.name} at (${Math.round(this.position.getX())}, ${Math.round(this.position.getY())}) with (${Math.round(this.getMass())}, ${Math.round(this.radius)})`;

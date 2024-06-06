@@ -10,8 +10,8 @@ export class EjectedCell extends Cell {
     private ejectParent: PlayerCell;
     private exitedParent: boolean;
 
-    constructor(settings: WorldSettings, radius: number, position: Vector2, boost: Vector2, ejectParent: PlayerCell) {
-        super(settings, radius, position, new Vector2(0), boost);
+    constructor(radius: number, position: Vector2, boost: Vector2, ejectParent: PlayerCell) {
+        super(radius, position, new Vector2(0), boost);
         this.ejectParent = ejectParent;
         this.exitedParent = false;
     }
