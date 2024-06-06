@@ -64,8 +64,8 @@ export class World {
      */
     spawnPlayerCell(pid: number): void {
         const radius = areaToRadius(this.settings.SPAWN_MASS);
-        const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
-        const newCell = new PlayerCell(pid, radius, spawnPos, new Vector2(0));
+        const position = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
+        const newCell = new PlayerCell(pid, radius, position, new Vector2(0));
 
         for (const cell of this.cells) {
             if (cell instanceof Virus && areIntersecting(newCell.getBoundary(), cell.getBoundary())) {
@@ -82,8 +82,8 @@ export class World {
      */
     spawnPellet(): void {
         const radius = areaToRadius(this.settings.PELLET_MASS);
-        const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
-        const pellet = new Pellet(radius, spawnPos);
+        const position = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
+        const pellet = new Pellet(radius, position);
         this.actionQueue.push([WorldAction.CREATE_CELL, pellet]);
     }
 
@@ -93,8 +93,8 @@ export class World {
      */
     spawnVirus(): void {
         const radius = areaToRadius(this.settings.VIRUS_MASS);
-        const spawnPos = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
-        const virus = new Virus(radius, spawnPos);
+        const position = new Vector2(randomInt(this.settings.WORLD_SIZE), randomInt(this.settings.WORLD_SIZE));
+        const virus = new Virus(radius, position);
         this.actionQueue.push([WorldAction.CREATE_CELL, virus]);
     }
 
@@ -144,10 +144,10 @@ export class World {
      */
     ejectFromCell(cell: PlayerCell, direction: Vector2): void {
         const radius = areaToRadius(this.settings.EJECT_MASS);
-        const spawnPos = cell.getPosition().getSum(direction.getMultiple(cell.getRadius()));
+        const position = cell.getPosition().getSum(direction.getMultiple(cell.getRadius()));
         const dispersion = randomFromInterval(-this.settings.EJECT_DISPERSION, this.settings.EJECT_DISPERSION);
         const boost = direction.getMultiple(this.settings.EJECT_BOOST).getRotated(dispersion);
-        const ejectedCell = new EjectedCell(radius, spawnPos, boost, cell);
+        const ejectedCell = new EjectedCell(radius, position, boost, cell);
         this.actionQueue.push([WorldAction.CREATE_CELL, ejectedCell]);
         this.actionQueue.push([WorldAction.UPDATE_CELL, cell, -this.settings.EJECT_MASS])
     }
