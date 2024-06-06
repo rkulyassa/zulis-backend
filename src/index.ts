@@ -7,8 +7,9 @@ import Gamemodes from './GameModes.json';
 const PORT: number = 9000;
 const app: express.Application = express();
 const gameServers: Array<GameServer> = [
-    new GameServer(PORT+1, 'Mega 1', 'na', 20, 50, Gamemodes.Mega),
-    // new GameServer(PORT+2, 'Giga 1', 'eu', 20, 35, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 1', 'eu', 20, 50, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 2', 'eu', 20, 45, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 3', 'eu', 20, 35, Gamemodes.Mega),
 ];
 
 for (const gameServer of gameServers) gameServer.start();

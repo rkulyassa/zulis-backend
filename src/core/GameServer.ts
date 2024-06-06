@@ -13,7 +13,7 @@ import * as Physics from './services/Physics';
 const decoder = new TextDecoder();
 
 export class GameServer {
-    private static portIndex: number;
+    private static portOffset: number = 1;
     private uWSApp: TemplatedApp;
     private port: number;
     private age: number;
@@ -25,9 +25,10 @@ export class GameServer {
     private world: World;
     private liveUpdate: ReturnType<typeof setInterval>;
 
-    constructor(port: number, name: string, region: string, tps: number, capacity: number, worldSettings: WorldSettings) {
+    constructor(basePort: number, name: string, region: string, tps: number, capacity: number, worldSettings: WorldSettings) {
         this.uWSApp = App();
-        this.port = port;
+        this.port = basePort + GameServer.portOffset;
+        GameServer.portOffset++;
         this.age = 0;
         this.name = name;
         this.region = region;
@@ -183,7 +184,7 @@ export class GameServer {
             close: this.onClose.bind(this)
         }).listen(this.port, (promise) => {
             if (promise) {
-                console.log(`WebSocket listening on port ${this.port} for gamemode "${this.name}"`);
+                console.log(`GameServer running on ws://localhost:${this.port} for gamemode "${this.name}" in region "${this.region}"`);
             } else {
                 console.log(`Failed to listen to port ${this.port}`);
             }
