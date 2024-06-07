@@ -116,7 +116,8 @@ export class World {
         const playerCells = this.getPlayerCellsByPid(pid);
         for (const playerCell of playerCells) {
             this.actionQueue.push([WorldAction.DELETE_CELL, playerCell]);
-            this.actionQueue.push([WorldAction.CREATE_CELL, new DeadCell(playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity())]);
+            const deadCell = new DeadCell(playerCell.getRadius(), playerCell.getPosition(), playerCell.getVelocity());
+            this.actionQueue.push([WorldAction.CREATE_CELL, deadCell]);
         }
     }
 
@@ -158,11 +159,11 @@ export class World {
      * @param cell The {@link PlayerCell} to pop.
      */
     popCell(cell: PlayerCell): void {
-        const playerCells = this.getPlayerCellsByPid(cell.getOwnerPid());
-        const poppedCount = this.settings.MAX_CELLS - playerCells.length;
+        const pid = cell.getOwnerPid();
+        const cellCount = this.getPlayerCellsByPid(pid).length;
+        const poppedCount = this.settings.MAX_CELLS - cellCount;
         if (poppedCount === 0) return;
 
-        const pid = cell.getOwnerPid();
         const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/poppedCount);
         const position = cell.getPosition();
 

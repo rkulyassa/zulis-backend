@@ -30,7 +30,7 @@
         "VIRUS_PUSH_BOOST": 1,
         "VIRUS_MASS": 150,
 
-        "PELLET_COUNT": 0,
+        "PELLET_COUNT": 1000,
         "PELLET_MASS": 2,
 
         "DEAD_CELL_LIFETIME": 10000,
