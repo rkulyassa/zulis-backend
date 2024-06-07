@@ -45,6 +45,8 @@ export namespace ServerData {
     ];
 }
 
+// export type ServerData = ServerData.LOAD_WORLD | ServerData.UPDATE_GAME_STATE | ServerData.PLAYER_UPDATE;
+
 export type CellData = [
     cellId: number,
     ownerPid: number|null,

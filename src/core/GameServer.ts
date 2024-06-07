@@ -1,4 +1,4 @@
-import { App, TemplatedApp, WebSocket } from 'uWebSockets.js';
+import * as uWS from 'uWebSockets.js';
 import { World } from './World';
 import { WorldSettings } from '../types/WorldSettings';
 import { WebSocketData } from '../types/WebSocketData';
@@ -8,6 +8,7 @@ import { Square } from '../primitives/geometry/Square';
 import { PlayerCell } from './cells/PlayerCell';
 import { Controller } from './Controller';
 import { Region } from '../types/Region.enum';
+import { SmartBuffer } from '../primitives/SmartBuffer/SmartBuffer';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
@@ -15,7 +16,7 @@ const decoder = new TextDecoder();
 
 export class GameServer {
     private static portOffset: number = 1;
-    private uWSApp: TemplatedApp;
+    private uWSApp: uWS.TemplatedApp;
     private port: number;
     private age: number;
     private name: string;
@@ -27,9 +28,8 @@ export class GameServer {
     private liveUpdate: ReturnType<typeof setInterval>;
 
     constructor(basePort: number, name: string, region: Region, tps: number, capacity: number, worldSettings: WorldSettings) {
-        this.uWSApp = App();
-        this.port = basePort + GameServer.portOffset;
-        GameServer.portOffset++;
+        this.uWSApp = uWS.App();
+        this.port = basePort + GameServer.portOffset++;
         this.age = 0;
         this.name = name;
         this.region = region;
@@ -75,7 +75,7 @@ export class GameServer {
      * @param viewport - The viewport threshold to limit the amount of cells sent to the client around their respective area.
      * @returns An {@link Array<CellData>} containing the found cells.
      */
-    getCellsPacket(viewport: Rectangle): Array<Protocol.CellData> {
+    getCellsData(viewport: Rectangle): Array<Protocol.CellData> {
         const data = [];
 
         for (const cell of this.world.getQuadtree().query(viewport)) {
@@ -94,11 +94,16 @@ export class GameServer {
         return data;
     }
 
+    // buildPacket(opcode: Protocol.ServerOpcodes, data: Protocol.ServerData) {
+    //     const buffer = new SmartBuffer();
+    //     buffer.writeUInt8(opcode);
+    // }
+
     /**
      * Handles a new incoming connection.
      * @param ws - The incoming connection.
      */
-    onConnection(ws: WebSocket<WebSocketData>): void {
+    onConnection(ws: uWS.WebSocket<WebSocketData>): void {
         const pid = this.pidIndex;
         this.pidIndex += 1;
         ws.getUserData().pid = pid;
@@ -106,8 +111,10 @@ export class GameServer {
         const newController = new Controller(pid, ws);
         this.world.addController(newController);
 
-        const data: Protocol.ServerData.LOAD_WORLD = this.world.getSetting('WORLD_SIZE');
-        newController.sendWS([Protocol.ServerOpcodes.LOAD_WORLD, data]);
+        const smartBuffer = new SmartBuffer();
+        smartBuffer.writeUInt8(Protocol.ServerOpcodes.LOAD_WORLD);
+        smartBuffer.writeUInt8(this.world.getSetting('WORLD_SIZE'));
+        newController.sendWS(smartBuffer.getView().buffer);
 
         console.log(`Player joined (pid: ${pid})`);
     }
@@ -118,22 +125,33 @@ export class GameServer {
      * @param message - The data of the message.
      * @param isBinary
      */
-    onMessage(client: WebSocket<WebSocketData>, message: ArrayBuffer, isBinary: boolean): void {
+    onMessage(client: uWS.WebSocket<WebSocketData>, message: ArrayBuffer, isBinary: boolean): void {
         const pid: number = client.getUserData().pid;
         const controller: Controller = this.world.getControllerByPid(pid);
-        const [opcode, data]: [number, any] = JSON.parse(decoder.decode(message));
+        const data: SmartBuffer = new SmartBuffer(message);
+        const opcode: number = data.readUInt8();
+
         switch (opcode) {
             case Protocol.ClientOpcodes.PLAYER_UPDATE:
-                const [nick, skinId, teamTag]: Protocol.ClientData.PLAYER_UPDATE = data;
+                const [nick, skinId, teamTag]: Protocol.ClientData.PLAYER_UPDATE = [
+                    data.readStringNT(),
+                    data.readStringNT(),
+                    data.readStringNT(),
+                ];
                 controller.setNick(nick);
                 controller.setSkinId(skinId);
                 controller.setTeamTag(teamTag);
 
                 // replicate playerData update to rest of clients
                 for (const other of this.world.getControllers()) {
+                    const smartBuffer = new SmartBuffer();
+                    smartBuffer.writeUInt8(Protocol.ServerOpcodes.PLAYER_UPDATE);
+                    smartBuffer.writeUInt8(pid);
+                    smartBuffer.writeStringNT(nick);
+                    smartBuffer.writeStringNT(skinId);
                     const inTag: boolean = teamTag === other.getTeamTag();
-                    const replicatedData: Protocol.ServerData.PLAYER_UPDATE = [pid, nick, skinId, inTag];
-                    other.sendWS([Protocol.ServerOpcodes.PLAYER_UPDATE, replicatedData]);
+                    smartBuffer.writeUInt8(+ inTag);
+                    other.sendWS(smartBuffer.getView().buffer);
                 }
 
                 if (!controller.isPlaying()) {
@@ -143,19 +161,25 @@ export class GameServer {
                 break;
             case Protocol.ClientOpcodes.SPECTATE:
                 if (controller.isPlaying()) return;
-                const [spectateLock, cellId]: Protocol.ClientData.SPECTATE = data;
+                const [spectateLock, cellId]: Protocol.ClientData.SPECTATE = [
+                    !!data.readUInt8(),
+                    data.readUInt8()
+                ];
                 // @todo finish spectate mode - set data on controller
                 break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
-                const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = data;
+                const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = [
+                    data.readUInt8(),
+                    data.readUInt8()
+                ];
                 controller.setMouseVectorFromValues(dx, dy);
                 break;
             case Protocol.ClientOpcodes.TOGGLE_FEED:
-                const isFeeding: Protocol.ClientData.TOGGLE_FEED = data;
+                const isFeeding: Protocol.ClientData.TOGGLE_FEED = !!data.readUInt8();
                 controller.setAsEjecting(isFeeding);
                 break;
             case Protocol.ClientOpcodes.SPLIT:
-                const macro: Protocol.ClientData.SPLIT = data;
+                const macro: Protocol.ClientData.SPLIT = data.readUInt8();
                 controller.setToSplit(macro+1);
                 break;
             case Protocol.ClientOpcodes.STOP_MOVEMENT:
@@ -178,7 +202,7 @@ export class GameServer {
      * @param code
      * @param message 
      */
-    onClose(ws: WebSocket<WebSocketData>, code: number, message: ArrayBuffer) {
+    onClose(ws: uWS.WebSocket<WebSocketData>, code: number, message: ArrayBuffer) {
         const pid: number = ws.getUserData().pid;
         this.world.disconnectPlayerCellsByPid(pid);
         this.world.removeControllerByPid(pid);
@@ -218,10 +242,14 @@ export class GameServer {
                     viewport = new Square(new Vector2(size/2), size);
                 }
 
+                const smartBuffer = new SmartBuffer();
+                smartBuffer.writeUInt8(Protocol.ServerOpcodes.UPDATE_GAME_STATE);
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
-                const cells: Array<Protocol.CellData> = this.getCellsPacket(viewport);
-                const data: Protocol.ServerData.UPDATE_GAME_STATE = [viewportX, viewportY, cells];
-                controller.sendWS([Protocol.ServerOpcodes.UPDATE_GAME_STATE, data]);
+                smartBuffer.writeUInt8(viewportX);
+                smartBuffer.writeUInt8(viewportY);
+                const cellsData: Array<Protocol.CellData> = this.getCellsData(viewport);
+                smartBuffer.writeStringNT(JSON.stringify(cellsData));
+                controller.sendWS(smartBuffer.getView().buffer);
 
                 this.age += 1000/this.tps;
             }

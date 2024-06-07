@@ -88,8 +88,9 @@ export class Controller {
         this.ejectTick = ejectTick;
     }
 
-    sendWS(data: Object): void {
-        const packet = encoder.encode(JSON.stringify(data));
-        this.ws.send(packet);
+    sendWS(data: ArrayBuffer): void {
+        this.ws.send(data, true);
+        // @todo: attempt compression
+        // this.ws.send(data, true, true);
     }
 }
