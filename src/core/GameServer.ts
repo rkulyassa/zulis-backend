@@ -111,9 +111,10 @@ export class GameServer {
         const newController = new Controller(pid, ws);
         this.world.addController(newController);
 
-        const smartBuffer = new SmartBuffer();
+        const smartBuffer = new SmartBuffer(3);
         smartBuffer.writeUInt8(Protocol.ServerOpcodes.LOAD_WORLD);
-        smartBuffer.writeUInt8(this.world.getSetting('WORLD_SIZE'));
+        smartBuffer.writeUInt16(this.world.getSetting('WORLD_SIZE'));
+        smartBuffer.setOffset(0);
         newController.sendWS(smartBuffer.getView().buffer);
 
         console.log(`Player joined (pid: ${pid})`);
@@ -245,8 +246,8 @@ export class GameServer {
                 const smartBuffer = new SmartBuffer();
                 smartBuffer.writeUInt8(Protocol.ServerOpcodes.UPDATE_GAME_STATE);
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
-                smartBuffer.writeUInt8(viewportX);
-                smartBuffer.writeUInt8(viewportY);
+                smartBuffer.writeUInt16(viewportX);
+                smartBuffer.writeUInt16(viewportY);
                 const cellsData: Array<Protocol.CellData> = this.getCellsData(viewport);
                 smartBuffer.writeStringNT(JSON.stringify(cellsData));
                 controller.sendWS(smartBuffer.getView().buffer);
