@@ -213,6 +213,8 @@ export class World {
 
         this.actionQueue.push([WorldAction.EAT, predator, prey]);
         prey.setEater(predator);
+
+        return true;
     }
 
     /**
