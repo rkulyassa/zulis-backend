@@ -9,6 +9,7 @@ import { PlayerCell } from './cells/PlayerCell';
 import { Controller } from './Controller';
 import { Region } from '../types/Region.enum';
 import { SmartBuffer } from '../primitives/SmartBuffer/SmartBuffer';
+import { PidManager } from './services/PidManager';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
@@ -23,7 +24,7 @@ export class GameServer {
     private readonly region: Region;
     private readonly tps: number;
     private readonly capacity: number;
-    private pidIndex: number;
+    private readonly pidManager: PidManager;
     private readonly world: World;
     private liveUpdate: ReturnType<typeof setInterval>;
 
@@ -35,7 +36,7 @@ export class GameServer {
         this.region = region;
         this.tps = tps;
         this.capacity = capacity;
-        this.pidIndex = 0;
+        this.pidManager = new PidManager(capacity);
         this.world = new World(worldSettings, this.tps);
     }
 
@@ -104,8 +105,7 @@ export class GameServer {
      * @param ws - The incoming connection.
      */
     onConnection(ws: uWS.WebSocket<WebSocketData>): void {
-        const pid = this.pidIndex;
-        this.pidIndex += 1;
+        const pid = this.pidManager.getAvailablePid();
         ws.getUserData().pid = pid;
 
         const newController = new Controller(pid, ws);
