@@ -5,8 +5,8 @@ import { WebSocketData } from '../types/WebSocketData';
 const encoder = new TextEncoder();
 
 export class Controller {
-    private pid: number;
-    private ws: WebSocket<WebSocketData>;
+    private readonly pid: number;
+    private readonly ws: WebSocket<WebSocketData>;
     private playing: boolean;
     private nick: string;
     private skinId: string;

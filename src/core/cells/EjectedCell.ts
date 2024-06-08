@@ -6,7 +6,7 @@ import { Square } from '../../primitives/geometry/Square';
 import { CellType } from '../../types/CellType.enum';
 
 export class EjectedCell extends Cell {
-    private ejectParent: PlayerCell;
+    private readonly ejectParent: PlayerCell;
     private exitedParent: boolean;
 
     constructor(radius: number, position: Vector2, boost: Vector2, ejectParent: PlayerCell) {
@@ -18,6 +18,7 @@ export class EjectedCell extends Cell {
     getEjectParent(): PlayerCell {
         return this.ejectParent;
     }
+
     setExitedParent(exitedParent: boolean): void {
         this.exitedParent = exitedParent;
     }

@@ -16,15 +16,15 @@ const decoder = new TextDecoder();
 
 export class GameServer {
     private static portOffset: number = 1;
-    private uWSApp: uWS.TemplatedApp;
-    private port: number;
+    private readonly uWSApp: uWS.TemplatedApp;
+    private readonly port: number;
     private age: number;
-    private name: string;
-    private region: Region;
-    private tps: number;
-    private capacity: number;
+    private readonly name: string;
+    private readonly region: Region;
+    private readonly tps: number;
+    private readonly capacity: number;
     private pidIndex: number;
-    private world: World;
+    private readonly world: World;
     private liveUpdate: ReturnType<typeof setInterval>;
 
     constructor(basePort: number, name: string, region: Region, tps: number, capacity: number, worldSettings: WorldSettings) {

@@ -5,12 +5,12 @@ import { CellType } from '../../types/CellType.enum';
 
 export abstract class Cell {
     private static index: number = 0;
-    private id: number;
+    private readonly id: number;
     private radius: number;
     protected position: Vector2;
     private velocity: Vector2;
     protected boost: Vector2;
-    protected age: number = 0;
+    private age: number = 0;
     private eater: Cell = null;
 
     constructor(radius: number, position: Vector2, velocity: Vector2, boost: Vector2) {

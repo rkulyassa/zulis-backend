@@ -15,10 +15,10 @@ import { WorldAction } from '../types/WorldAction.enum';
 import * as Physics from './services/Physics';
 
 export class World {
-    private settings: WorldSettings;
-    private tps: number;
+    private readonly settings: WorldSettings;
+    private readonly tps: number;
     private cells: Array<Cell>;
-    private boundary: Square;
+    private readonly boundary: Square;
     private quadtree: Quadtree<Cell>;
     private actionQueue: Array<[WorldAction, Cell, any?]>;
     private controllers: Array<Controller>;
