@@ -8,7 +8,7 @@ export class PidManager {
     }
   
     /**
-     * Gets the lowest unused pid and sets as used.
+     * Gets the lowest unused pid and sets it as used.
      * @returns The lowest unused pid.
      */
     getAvailablePid(): number {
@@ -21,8 +21,8 @@ export class PidManager {
     }
   
     /**
-     * Sets a pid as unused
-     * @param pid The pid to release
+     * Sets a pid as unused.
+     * @param pid - The pid to release.
      */
     releasePid(pid: number) {
         this.pids[pid] = 0;
