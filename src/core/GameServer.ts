@@ -159,24 +159,24 @@ export class GameServer {
             case Protocol.ClientOpcodes.SPECTATE:
                 if (controller.isPlaying()) return;
                 const [spectateLock, cellId]: Protocol.ClientData.SPECTATE = [
-                    !!data.readUInt8(),
-                    data.readUInt8()
+                    !!smartBuffer.readUInt8(),
+                    smartBuffer.readUInt8()
                 ];
                 // @todo finish spectate mode - set data on controller
                 break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
                 const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = [
-                    data.readUInt8(),
-                    data.readUInt8()
+                    smartBuffer.readUInt8(),
+                    smartBuffer.readUInt8()
                 ];
                 controller.setMouseVectorFromValues(dx, dy);
                 break;
             case Protocol.ClientOpcodes.TOGGLE_FEED:
-                const isFeeding: Protocol.ClientData.TOGGLE_FEED = !!data.readUInt8();
+                const isFeeding: Protocol.ClientData.TOGGLE_FEED = !!smartBuffer.readUInt8();
                 controller.setAsEjecting(isFeeding);
                 break;
             case Protocol.ClientOpcodes.SPLIT:
-                const macro: Protocol.ClientData.SPLIT = data.readUInt8();
+                const macro: Protocol.ClientData.SPLIT = smartBuffer.readUInt8();
                 controller.setToSplit(macro+1);
                 break;
             case Protocol.ClientOpcodes.STOP_MOVEMENT:
@@ -188,7 +188,7 @@ export class GameServer {
             case Protocol.ClientOpcodes.SAVE_REPLAY:
                 break;
             default:
-                console.log(`Client (pid: ${pid}) called non-existent opcode ${opcode} with data: ${data}`);
+                console.log(`Client (pid: ${pid}) called non-existent opcode ${opcode}`);
                 break;
         }
     }
