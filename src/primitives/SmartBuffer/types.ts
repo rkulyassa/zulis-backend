@@ -6,6 +6,8 @@ export type ReadUtilsType = {
     readUInt16: ReadFunction,
     readInt32: ReadFunction,
     readUInt32: ReadFunction,
+    readFloat32: ReadFunction,
+    readFloat64: ReadFunction,
 };
 
 type WriteFunction = (view: DataView, offset: number, value: number, littleEndian?: boolean) => void;
@@ -16,4 +18,8 @@ export type WriteUtilsType = {
     writeUInt16: WriteFunction,
     writeInt32: WriteFunction,
     writeUInt32: WriteFunction,
+    writeFloat32: WriteFunction,
+    writeFloat64: WriteFunction,
 };
+
+export type Offset = number | null;

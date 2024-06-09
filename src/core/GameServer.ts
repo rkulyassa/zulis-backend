@@ -240,14 +240,14 @@ export class GameServer {
                 smartBuffer.build();
                 smartBuffer.writeUInt8(Protocol.ServerOpcodes.UPDATE_GAME_STATE);
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
-                smartBuffer.writeUInt16(viewportX);
-                smartBuffer.writeUInt16(viewportY);
+                smartBuffer.writeFloat32(viewportX);
+                smartBuffer.writeFloat32(viewportY);
                 const cellsData: Array<Protocol.CellData> = this.getCellsData(viewport);
                 for (const cellData of cellsData) {
                     smartBuffer.writeUInt16(cellData[0]);
                     smartBuffer.writeUInt8(cellData[1]);
-                    smartBuffer.writeUInt16(cellData[2]);
-                    smartBuffer.writeUInt16(cellData[3]);
+                    smartBuffer.writeFloat32(cellData[2]);
+                    smartBuffer.writeFloat32(cellData[3]);
                     smartBuffer.writeUInt16(cellData[4]);
                 }
                 // smartBuffer.writeStringNT(JSON.stringify(cellsData));

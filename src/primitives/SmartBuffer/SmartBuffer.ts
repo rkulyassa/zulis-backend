@@ -1,5 +1,6 @@
 import {StringUtil} from "./StringUtil";
-import {DEFAULT_SIZE, ReadUtils, WriteUtils} from "./utils";
+import {Offset} from "./types";
+import {DEFAULT_SIZE, isNull, ReadUtils, WriteUtils} from "./utils";
 
 export class SmartBuffer {
     private view!: DataView;
@@ -49,127 +50,149 @@ export class SmartBuffer {
 
     ensureCapacity(size: number): void {
         const requiredSize: number = this.offset + size;
-
         if (requiredSize > this.view.byteLength) {
             const newBuffer: ArrayBuffer = new ArrayBuffer(requiredSize);
-            const oldArray: Uint8Array = new Uint8Array(this.view.buffer);
-            const newArray: Uint8Array = new Uint8Array(newBuffer);
-
-            newArray.set(oldArray);
+            new Uint8Array(newBuffer).set(new Uint8Array(this.view.buffer));
             this.view = new DataView(newBuffer);
         }
     }
 
-    readInt8(offset?: number | null): number {
+    readInt8(offset?: Offset): number {
         const result: number = ReadUtils.readInt8(this.view, offset ?? this.offset);
-
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 1;
         }
         return result;
     }
 
-    readUInt8(offset?: number | null): number {
+    readUInt8(offset?: Offset): number {
         const result: number = ReadUtils.readUInt8(this.view, offset ?? this.offset);
-
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 1;
         }
         return result;
     }
 
-    readInt16(littleEndian: boolean = true, offset?: number | null): number {
+    readInt16(littleEndian: boolean = true, offset?: Offset): number {
         const result: number = ReadUtils.readInt16(this.view, offset ?? this.offset, littleEndian);
-
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 2;
         }
         return result;
     }
 
-    readUInt16(littleEndian: boolean = true, offset?: number | null): number {
+    readUInt16(littleEndian: boolean = true, offset?: Offset): number {
         const result: number = ReadUtils.readUInt16(this.view, offset ?? this.offset, littleEndian);
-
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 2;
         }
         return result;
     }
 
-    readInt32(littleEndian: boolean = true, offset?: number | null): number {
+    readInt32(littleEndian: boolean = true, offset?: Offset): number {
         const result: number = ReadUtils.readInt32(this.view, offset ?? this.offset, littleEndian);
-
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 4;
         }
         return result;
     }
 
-    readUInt32(littleEndian: boolean = true, offset?: number | null): number {
+    readUInt32(littleEndian: boolean = true, offset?: Offset): number {
         const result: number = ReadUtils.readUInt32(this.view, offset ?? this.offset, littleEndian);
-
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 4;
         }
         return result;
     }
 
-    readString(offset?: number | null): string {
+    readFloat32(littleEndian: boolean = true, offset?: number | null): number {
+        const result: number = ReadUtils.readFloat32(this.view, offset ?? this.offset, littleEndian);
+        if (isNull(offset)) {
+            this.offset += 4;
+        }
+        return result;
+    }
+
+    readFloat64(littleEndian: boolean = true, offset?: number | null): number {
+        const result: number = ReadUtils.readFloat64(this.view, offset ?? this.offset, littleEndian);
+        if (isNull(offset)) {
+            this.offset += 8;
+        }
+        return result;
+    }
+
+    readString(offset?: Offset): string {
         return StringUtil.readString(this, offset, false);
     }
 
-    readStringNT(offset?: number | null): string {
+    readStringNT(offset?: Offset): string {
         return StringUtil.readString(this, offset, true);
     }
 
-    writeInt8(value: number, offset?: number | null): void {
+    writeInt8(value: number, offset?: Offset): void {
         this.ensureCapacity(1);
         WriteUtils.writeInt8(this.view, offset ?? this.offset++, value);
     }
 
-    writeUInt8(value: number, offset?: number | null): void {
+    writeUInt8(value: number, offset?: Offset): void {
         this.ensureCapacity(1);
         WriteUtils.writeUInt8(this.view, offset ?? this.offset++, value);
     }
 
-    writeInt16(value: number, littleEndian: boolean = true, offset?: number | null): void {
+    writeInt16(value: number, littleEndian: boolean = true, offset?: Offset): void {
         this.ensureCapacity(2);
         WriteUtils.writeInt16(this.view, offset ?? this.offset, value, littleEndian);
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 2;
         }
     }
 
-    writeUInt16(value: number, littleEndian: boolean = true, offset?: number | null): void {
+    writeUInt16(value: number, littleEndian: boolean = true, offset?: Offset): void {
         this.ensureCapacity(2);
         WriteUtils.writeUInt16(this.view, offset ?? this.offset, value, littleEndian);
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 2;
         }
     }
 
-    writeInt32(value: number, littleEndian: boolean = true, offset?: number | null): void {
+    writeInt32(value: number, littleEndian: boolean = true, offset?: Offset): void {
         this.ensureCapacity(4);
         WriteUtils.writeInt32(this.view, offset ?? this.offset, value, littleEndian);
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 4;
         }
     }
 
-    writeUInt32(value: number, littleEndian: boolean = true, offset?: number | null): void {
+    writeUInt32(value: number, littleEndian: boolean = true, offset?: Offset): void {
         this.ensureCapacity(4);
         WriteUtils.writeUInt32(this.view, offset ?? this.offset, value, littleEndian);
-        if (offset === null || offset === undefined) {
+        if (isNull(offset)) {
             this.offset += 4;
         }
     }
 
-    writeString(value: string, offset?: number | null): void {
+    writeFloat32(value: number, littleEndian: boolean = true, offset?: number | null): void {
+        this.ensureCapacity(4);
+        WriteUtils.writeFloat32(this.view, offset ?? this.offset, value, littleEndian);
+        if (isNull(offset)) {
+            this.offset += 4;
+        }
+    }
+
+    writeFloat64(value: number, littleEndian: boolean = true, offset?: number | null): void {
+        this.ensureCapacity(8);
+        WriteUtils.writeFloat64(this.view, offset ?? this.offset, value, littleEndian);
+        if (isNull(offset)) {
+            this.offset += 8;
+        }
+    }
+
+    writeString(value: string, offset?: Offset): void {
         this.ensureCapacity(value.length);
         StringUtil.writeString(this, value, offset, false);
     }
 
-    writeStringNT(value: string, offset?: number | null): void {
+    writeStringNT(value: string, offset?: Offset): void {
         this.ensureCapacity(value.length + 1);
         StringUtil.writeString(this, value, offset, true);
     }
