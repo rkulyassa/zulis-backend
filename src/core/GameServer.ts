@@ -14,7 +14,7 @@ import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
 const decoder = new TextDecoder();
-let smartBuffer = new SmartBuffer();
+const smartBuffer = new SmartBuffer();
 
 export class GameServer {
     private static portOffset: number = 1;
@@ -107,7 +107,7 @@ export class GameServer {
         const newController = new Controller(pid, ws);
         this.world.addController(newController);
 
-        smartBuffer = new SmartBuffer(3);
+        smartBuffer.build(3);
         smartBuffer.writeUInt8(Protocol.ServerOpcodes.LOAD_WORLD);
         smartBuffer.writeUInt16(this.world.getSetting('WORLD_SIZE'));
         smartBuffer.setOffset(0);
@@ -125,15 +125,15 @@ export class GameServer {
     onMessage(client: uWS.WebSocket<WebSocketData>, message: ArrayBuffer, isBinary: boolean): void {
         const pid: number = client.getUserData().pid;
         const controller: Controller = this.world.getControllerByPid(pid);
-        const data: SmartBuffer = SmartBuffer.fromBuffer(message);
-        const opcode: number = data.readUInt8();
+        smartBuffer.build(message);
+        const opcode: number = smartBuffer.readUInt8();
 
         switch (opcode) {
             case Protocol.ClientOpcodes.PLAYER_UPDATE:
                 const [nick, skinId, teamTag]: Protocol.ClientData.PLAYER_UPDATE = [
-                    data.readStringNT(),
-                    data.readStringNT(),
-                    data.readStringNT(),
+                    smartBuffer.readStringNT(),
+                    smartBuffer.readStringNT(),
+                    smartBuffer.readStringNT(),
                 ];
                 controller.setNick(nick);
                 controller.setSkinId(skinId);
@@ -141,7 +141,7 @@ export class GameServer {
 
                 // replicate playerData update to rest of clients
                 for (const other of this.world.getControllers()) {
-                    smartBuffer = new SmartBuffer();
+                    smartBuffer.build();
                     smartBuffer.writeUInt8(Protocol.ServerOpcodes.PLAYER_UPDATE);
                     smartBuffer.writeUInt8(pid);
                     smartBuffer.writeStringNT(nick);
@@ -239,7 +239,7 @@ export class GameServer {
                     viewport = new Square(new Vector2(size/2), size);
                 }
 
-                smartBuffer = new SmartBuffer();
+                smartBuffer.build();
                 smartBuffer.writeUInt8(Protocol.ServerOpcodes.UPDATE_GAME_STATE);
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
                 smartBuffer.writeUInt16(viewportX);
