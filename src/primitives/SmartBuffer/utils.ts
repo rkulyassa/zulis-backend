@@ -1,12 +1,4 @@
-/**
- * @file utils.ts
- * @description Fonctions utilitaires pour la gestion des buffers et encodages.
- * @version 1.0.0
- * @date 2024-06-06
- * @autor Fohz67
- */
-
-import {ReadUtilsType, WriteUtilsType} from './types';
+import {ReadUtilsType, WriteUtilsType} from "./types";
 
 export const DEFAULT_SIZE: number = 8;
 

@@ -1,11 +1,3 @@
-/**
- * @file types.ts
- * @description Définition des types et des encodages utilisés dans le projet.
- * @version 1.0.0
- * @date 2024-06-06
- * @autor Fohz67
- */
-
 type ReadFunction = (view: DataView, offset: number, littleEndian?: boolean) => number;
 export type ReadUtilsType = {
     readInt8: ReadFunction,

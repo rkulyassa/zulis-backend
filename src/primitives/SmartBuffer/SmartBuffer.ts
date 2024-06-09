@@ -1,29 +1,29 @@
-/**
- * @file SmartBuffer.ts
- * @version 1.0.0
- * @date 2024-06-06
- * @autor Fohz67
- */
-
 import {StringUtil} from "./StringUtil";
 import {DEFAULT_SIZE, ReadUtils, WriteUtils} from "./utils";
 
 export class SmartBuffer {
-    private view: DataView;
-    private offset: number;
+    private view!: DataView;
+    private offset!: number;
 
     constructor(data: ArrayBuffer | number = DEFAULT_SIZE) {
+        this.build(data);
+    }
+
+    build(data: ArrayBuffer | number = DEFAULT_SIZE): void {
         if (data instanceof ArrayBuffer) {
             this.view = new DataView(data);
         } else {
-            const arrayBuffer: ArrayBuffer = new ArrayBuffer(data);
-            this.view = new DataView(arrayBuffer);
+            this.view = new DataView(new ArrayBuffer(data));
         }
         this.offset = 0;
     }
 
     static fromSize(size: number): SmartBuffer {
         return new SmartBuffer(size);
+    }
+
+    static fromBuffer(buffer: ArrayBuffer): SmartBuffer {
+        return new SmartBuffer(buffer);
     }
 
     getView(): DataView {

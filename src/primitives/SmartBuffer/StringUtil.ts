@@ -1,10 +1,3 @@
-/**
- * @file StringUtils.ts
- * @version 1.0.0
- * @date 2024-06-06
- * @autor Fohz67
- */
-
 import {SmartBuffer} from './SmartBuffer';
 import {ReadUtils, WriteUtils} from './utils';
 
