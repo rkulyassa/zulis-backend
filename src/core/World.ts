@@ -265,17 +265,25 @@ export class World {
             for (const cell of playerCells) {
 
                 // set velocity
-                const speed = this.settings.BASE_SPEED * (1/tps) * cell.getRadius() ** -0.5;
+                // const speed = this.settings.BASE_SPEED * (1/tps) * cell.getRadius() ** -0.4396754;
+                const speed = this.settings.BASE_SPEED * cell.getRadius() ** -0.4396754;
                 let d = targetPoint.getDifference(cell.getPosition());
+                let v = d.getMultiple(speed);
+                if (v.getMagnitude() > this.settings.SPEED_CAP) {
+                    v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
+                }
                 if (d.getMagnitude() === 0) { // cursor in middle
                     cell.setVelocity(new Vector2(0));
-                } else {
-                    let v = d.getNormal().getMultiple(speed);
-                    if (v.getMagnitude() > this.settings.SPEED_CAP) {
-                        v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
-                    }
-                    cell.setVelocity(v);
                 }
+                cell.setVelocity(v);
+
+                // } else {
+                //     let v = d.getMultiple(speed);
+                //     // if (v.getMagnitude() > this.settings.SPEED_CAP) {
+                //     //     v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
+                //     // }
+                //     cell.setVelocity(v);
+                // }
 
                 // handle ejecting
                 if (controller.isEjecting()) {

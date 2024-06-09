@@ -11,12 +11,12 @@
         "MERGE_TIME_SCALE": 0.25,
         "MIN_MASS_TO_EJECT": 40,
         "MIN_MASS_TO_SPLIT": 126,
-        "SPAWN_MASS": 12000,
-        "BASE_SPEED": 1000,
+        "SPAWN_MASS": 3600,
+        "BASE_SPEED": 0.1,
         "SPEED_CAP": 0.5,
         "SPEED_EXPONENT": 1,
 
-        "SPLIT_BOOST": 2,
+        "SPLIT_BOOST": 1,
         "SPLIT_RESOLVE_DELAY": 500,
 
         "EJECT_BOOST": 2,
