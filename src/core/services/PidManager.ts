@@ -23,7 +23,7 @@ export class PidManager {
      */
     getAvailablePid(): number {
         const offset = this.reservedPids.length;
-        for (let i = offset; i < this.capacity; i++) {
+        for (let i = 0; i < this.capacity; i++) {
             if (this.pids[i] === 0) {
                 this.pids[i] = 1;
                 return i + offset;
