@@ -1,8 +1,18 @@
+import { CellType } from "../../types/CellType.enum";
+
 export class PidManager {
+    private reservedPids: Array<CellType>;
     private capacity: number;
     private pids: Uint8Array;
 
     constructor(capacity: number) {
+        // reserve pids 0-3 for non-playerCells
+        this.reservedPids = [
+            CellType.PELLET,
+            CellType.EJECTED_CELL,
+            CellType.VIRUS,
+            CellType.DEAD_CELL
+        ];
         this.capacity = capacity;
         this.pids = new Uint8Array(capacity);
     }
@@ -12,10 +22,11 @@ export class PidManager {
      * @returns The lowest unused pid.
      */
     getAvailablePid(): number {
-        for (let i = 0; i < this.capacity; i++) {
+        const offset = this.reservedPids.length;
+        for (let i = offset; i < this.capacity; i++) {
             if (this.pids[i] === 0) {
                 this.pids[i] = 1;
-                return i;
+                return i + offset;
             }
         }
     }
@@ -25,6 +36,11 @@ export class PidManager {
      * @param pid - The pid to release.
      */
     releasePid(pid: number) {
-        this.pids[pid] = 0;
+        const offset = this.reservedPids.length;
+        this.pids[pid - offset] = 0;
+    }
+
+    getReservedPid(cellTypeEnum: CellType): number {
+        return this.reservedPids.indexOf(cellTypeEnum);
     }
 }

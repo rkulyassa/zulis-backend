@@ -50,7 +50,6 @@ export namespace ServerData {
 export type CellData = [
     cellId: number,
     ownerPid: number|null,
-    cellType: CellType,
     x: number,
     y: number,
     radius: number,

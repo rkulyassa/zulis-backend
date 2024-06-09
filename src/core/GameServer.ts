@@ -12,6 +12,7 @@ import { SmartBuffer } from '../primitives/SmartBuffer/SmartBuffer';
 import { PidManager } from './services/PidManager';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
+import { CellType } from '../types/CellType.enum';
 
 const decoder = new TextDecoder();
 const smartBuffer = new SmartBuffer();
@@ -81,11 +82,10 @@ export class GameServer {
         const data = [];
 
         for (const cell of this.world.getQuadtree().query(viewport)) {
-            const ownerPid: number = cell instanceof PlayerCell ? cell.getOwnerPid() : null;
+            const ownerPid: number = cell instanceof PlayerCell ? cell.getOwnerPid() : this.pidManager.getReservedPid(cell.getTypeEnum());
             const cellData: Protocol.CellData = [
                 cell.getId(),
                 ownerPid,
-                cell.getTypeEnum(),
                 cell.getPosition().getX(),
                 cell.getPosition().getY(),
                 cell.getRadius()
@@ -160,14 +160,14 @@ export class GameServer {
                 if (controller.isPlaying()) return;
                 const [spectateLock, cellId]: Protocol.ClientData.SPECTATE = [
                     !!smartBuffer.readUInt8(),
-                    smartBuffer.readUInt8()
+                    smartBuffer.readUInt16()
                 ];
                 // @todo finish spectate mode - set data on controller
                 break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
                 const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = [
-                    smartBuffer.readUInt8(),
-                    smartBuffer.readUInt8()
+                    smartBuffer.readUInt16(),
+                    smartBuffer.readUInt16()
                 ];
                 controller.setMouseVectorFromValues(dx, dy);
                 break;
@@ -248,10 +248,9 @@ export class GameServer {
                 for (const cellData of cellsData) {
                     smartBuffer.writeUInt16(cellData[0]);
                     smartBuffer.writeUInt8(cellData[1]);
-                    smartBuffer.writeUInt8(cellData[2]);
+                    smartBuffer.writeUInt16(cellData[2]);
                     smartBuffer.writeUInt16(cellData[3]);
                     smartBuffer.writeUInt16(cellData[4]);
-                    smartBuffer.writeUInt16(cellData[5]);
                 }
                 // smartBuffer.writeStringNT(JSON.stringify(cellsData));
                 controller.sendWS(smartBuffer.getView().buffer);
