@@ -166,8 +166,8 @@ export class GameServer {
                 break;
             case Protocol.ClientOpcodes.MOUSE_MOVE:
                 const [dx, dy]: Protocol.ClientData.MOUSE_MOVE = [
-                    smartBuffer.readUInt16(),
-                    smartBuffer.readUInt16()
+                    smartBuffer.readInt16(),
+                    smartBuffer.readInt16()
                 ];
                 controller.setMouseVectorFromValues(dx, dy);
                 break;
