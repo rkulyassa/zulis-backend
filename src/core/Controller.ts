@@ -2,8 +2,6 @@ import { Vector2 } from '../primitives/geometry/Vector2';
 import { WebSocket } from 'uWebSockets.js';
 import { WebSocketData } from '../types/WebSocketData';
 
-const encoder = new TextEncoder();
-
 export class Controller {
     private readonly pid: number;
     private readonly ws: WebSocket<WebSocketData>;

@@ -12,9 +12,7 @@ import { SmartBuffer } from '../primitives/SmartBuffer/SmartBuffer';
 import { PidManager } from './services/PidManager';
 import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
-import { CellType } from '../types/CellType.enum';
 
-const decoder = new TextDecoder();
 const smartBuffer = new SmartBuffer();
 
 export class GameServer {
