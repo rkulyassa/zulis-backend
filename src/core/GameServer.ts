@@ -14,6 +14,7 @@ import * as Protocol from '../types/Protocol.d';
 import * as Physics from './services/Physics';
 
 const decoder = new TextDecoder();
+let smartBuffer = new SmartBuffer();
 
 export class GameServer {
     private static portOffset: number = 1;
@@ -95,11 +96,6 @@ export class GameServer {
         return data;
     }
 
-    // buildPacket(opcode: Protocol.ServerOpcodes, data: Protocol.ServerData) {
-    //     const buffer = new SmartBuffer();
-    //     buffer.writeUInt8(opcode);
-    // }
-
     /**
      * Handles a new incoming connection.
      * @param ws - The incoming connection.
@@ -111,7 +107,7 @@ export class GameServer {
         const newController = new Controller(pid, ws);
         this.world.addController(newController);
 
-        const smartBuffer = new SmartBuffer(3);
+        smartBuffer = new SmartBuffer(3);
         smartBuffer.writeUInt8(Protocol.ServerOpcodes.LOAD_WORLD);
         smartBuffer.writeUInt16(this.world.getSetting('WORLD_SIZE'));
         smartBuffer.setOffset(0);
@@ -129,7 +125,7 @@ export class GameServer {
     onMessage(client: uWS.WebSocket<WebSocketData>, message: ArrayBuffer, isBinary: boolean): void {
         const pid: number = client.getUserData().pid;
         const controller: Controller = this.world.getControllerByPid(pid);
-        const data: SmartBuffer = new SmartBuffer(message);
+        const data: SmartBuffer = SmartBuffer.fromBuffer(message);
         const opcode: number = data.readUInt8();
 
         switch (opcode) {
@@ -145,7 +141,7 @@ export class GameServer {
 
                 // replicate playerData update to rest of clients
                 for (const other of this.world.getControllers()) {
-                    const smartBuffer = new SmartBuffer();
+                    smartBuffer = new SmartBuffer();
                     smartBuffer.writeUInt8(Protocol.ServerOpcodes.PLAYER_UPDATE);
                     smartBuffer.writeUInt8(pid);
                     smartBuffer.writeStringNT(nick);
@@ -243,13 +239,21 @@ export class GameServer {
                     viewport = new Square(new Vector2(size/2), size);
                 }
 
-                const smartBuffer = new SmartBuffer();
+                smartBuffer = new SmartBuffer();
                 smartBuffer.writeUInt8(Protocol.ServerOpcodes.UPDATE_GAME_STATE);
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
                 smartBuffer.writeUInt16(viewportX);
                 smartBuffer.writeUInt16(viewportY);
                 const cellsData: Array<Protocol.CellData> = this.getCellsData(viewport);
-                smartBuffer.writeStringNT(JSON.stringify(cellsData));
+                for (const cellData of cellsData) {
+                    smartBuffer.writeUInt16(cellData[0]);
+                    smartBuffer.writeUInt8(cellData[1]);
+                    smartBuffer.writeUInt8(cellData[2]);
+                    smartBuffer.writeUInt16(cellData[3]);
+                    smartBuffer.writeUInt16(cellData[4]);
+                    smartBuffer.writeUInt16(cellData[5]);
+                }
+                // smartBuffer.writeStringNT(JSON.stringify(cellsData));
                 controller.sendWS(smartBuffer.getView().buffer);
 
                 this.age += 1000/this.tps;
