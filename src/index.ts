@@ -8,7 +8,7 @@ import { Region } from './types/Region.enum';
 const PORT: number = 9000;
 const app: express.Application = express();
 const gameServers: Array<GameServer> = [
-    new GameServer(PORT, 'Mega 1', Region.EU, 20, 50, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 1', Region.EU, 60, 50, Gamemodes.Mega),
     new GameServer(PORT, 'Mega 2', Region.EU, 20, 45, Gamemodes.Mega),
     new GameServer(PORT, 'Mega 3', Region.EU, 20, 35, Gamemodes.Mega),
 ];
