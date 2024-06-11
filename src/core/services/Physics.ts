@@ -8,6 +8,7 @@ import { Vector2 } from '../../primitives/geometry/Vector2';
  */
 export function resolveCollision(a: Cell, b: Cell): void {
     const d = b.getPosition().getDifference(a.getPosition());
+    if (d.getMagnitude() === 0) return; // Ignore if cells are perfectly on top of each other (this assumes they will move in the next tick)
     const n = d.getNormal();
     const r = a.getRadius() + b.getRadius();
     const am = a.getMass();
