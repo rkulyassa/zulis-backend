@@ -1,4 +1,4 @@
-import { CellType } from "../../types/CellType.enum";
+import { CellType } from "../../models/CellType.enum";
 
 export class PidManager {
     private reservedPids: Array<CellType>;

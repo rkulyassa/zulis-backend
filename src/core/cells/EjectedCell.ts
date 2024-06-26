@@ -3,7 +3,7 @@ import { PlayerCell } from './PlayerCell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { areIntersecting } from '../../primitives/geometry/Utils';
 import { Square } from '../../primitives/geometry/Square';
-import { CellType } from '../../types/CellType.enum';
+import { CellType } from '../../models/CellType.enum';
 
 export class EjectedCell extends Cell {
     private readonly ejectParent: PlayerCell;

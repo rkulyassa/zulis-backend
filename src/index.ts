@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { GameServer } from './core/GameServer';
 import Gamemodes from './GameModes.json';
-import { Region } from './types/Region.enum';
+import { Region } from './models/Region.enum';
 
 const PORT: number = 9000;
 const app: express.Application = express();

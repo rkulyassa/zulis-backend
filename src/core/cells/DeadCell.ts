@@ -1,6 +1,6 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
-import { CellType } from '../../types/CellType.enum';
+import { CellType } from '../../models/CellType.enum';
 
 export class DeadCell extends Cell {
     constructor(radius: number, position: Vector2, boost: Vector2) {

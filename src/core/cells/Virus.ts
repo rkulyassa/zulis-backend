@@ -1,7 +1,7 @@
 import { Cell } from './Cell';
 import { Vector2 } from '../../primitives/geometry/Vector2';
 import { Square } from '../../primitives/geometry/Square';
-import { CellType } from '../../types/CellType.enum';
+import { CellType } from '../../models/CellType.enum';
 
 export class Virus extends Cell {
     constructor(radius: number, position: Vector2) {

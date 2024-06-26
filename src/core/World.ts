@@ -1,4 +1,4 @@
-import { WorldSettings } from '../types/WorldSettings';
+import { WorldSettings } from '../models/WorldSettings.model';
 import { Cell } from './cells/Cell';
 import { PlayerCell } from './cells/PlayerCell';
 import { Pellet } from './cells/Pellet';
@@ -11,7 +11,7 @@ import { Square } from '../primitives/geometry/Square';
 import { areaToRadius, areIntersecting } from '../primitives/geometry/Utils';
 import { randomInt, randomFromInterval } from '../primitives/Misc';
 import { Controller } from './Controller';
-import { WorldAction } from '../types/WorldAction.enum';
+import { WorldAction } from '../models/WorldAction.enum';
 import * as Physics from './services/Physics';
 
 export class World {
@@ -29,7 +29,7 @@ export class World {
         this.cells = new Array<Cell>();
         const size = this.settings.WORLD_SIZE;
         this.boundary = new Square(new Vector2(size/2, size/2), size);
-        this.quadtree = new Quadtree(this.boundary, 4, 16);
+        this.quadtree = new Quadtree(this.boundary, 8, 24);
         this.actionQueue = new Array<[WorldAction, Cell, any?]>();
         this.controllers = new Array<Controller>();
 
@@ -230,7 +230,7 @@ export class World {
         return a.getAge() >= aTime && b.getAge() >= bTime;
     }
 
-    tick(tps: number): void {
+    tick(): void {
         // console.log(`\ntick ${Date.now()}\n`);
         // this.quadtree.print();
 
@@ -368,6 +368,7 @@ export class World {
                     if (other instanceof EjectedCell) {
                         if ((other.hasExitedParent() || other.getAge() > 0)) {
                             this.resolveEat(cell, other);
+                            cell.getBoost().add(other.getBoost().getMultiple(0.001));
                         }
                     }
 

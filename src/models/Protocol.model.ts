@@ -13,15 +13,15 @@ export const enum ClientOpcodes {
 }
 
 export namespace ClientData {
-    type PLAYER_UPDATE = [nick: string, skinId: string, teamTag: string];
-    type SPECTATE = [spectateLock: boolean, cellId: number|null];
-    type MOUSE_MOVE = [dx: number, dy: number];
-    type TOGGLE_FEED = boolean;
-    type SPLIT = number;
-    type STOP_MOVEMENT = boolean;
-    type FREEZE_MOUSE = [dx: number, dy: number];
-    type LOCK_LINESPLIT = 0|1|2|3;
-    type SAVE_REPLAY = null;
+    export type PLAYER_UPDATE = [nick: string, skinId: string, teamTag: string];
+    export type SPECTATE = [spectateLock: boolean, cellId: number|null];
+    export type MOUSE_MOVE = [dx: number, dy: number];
+    export type TOGGLE_FEED = boolean;
+    export type SPLIT = number;
+    export type STOP_MOVEMENT = boolean;
+    export type FREEZE_MOUSE = [dx: number, dy: number];
+    export type LOCK_LINESPLIT = 0|1|2|3;
+    export type SAVE_REPLAY = null;
 }
 
 export const enum ServerOpcodes {

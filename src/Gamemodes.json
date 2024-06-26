@@ -6,12 +6,12 @@
         "WORLD_FRICTION": 0.95,
         "WORLD_SIZE": 500,
 
-        "MAX_CELLS": 64,
+        "MAX_CELLS": 256,
         "MERGE_TIME": 5000,
         "MERGE_TIME_SCALE": 0.25,
         "MIN_MASS_TO_EJECT": 40,
         "MIN_MASS_TO_SPLIT": 126,
-        "SPAWN_MASS": 3600,
+        "SPAWN_MASS": 10000,
         "BASE_SPEED": 0.1,
         "SPEED_CAP": 0.5,
         "SPEED_EXPONENT": 1,
@@ -26,7 +26,7 @@
         "EJECT_MASS": 16,
 
         "POP_BOOST": 2,
-        "VIRUS_COUNT": 10,
+        "VIRUS_COUNT": 0,
         "VIRUS_PUSH_BOOST": 1,
         "VIRUS_MASS": 150,
 

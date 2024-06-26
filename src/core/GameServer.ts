@@ -1,16 +1,16 @@
 import * as uWS from 'uWebSockets.js';
 import { World } from './World';
-import { WorldSettings } from '../types/WorldSettings';
-import { WebSocketData } from '../types/WebSocketData';
+import { WorldSettings } from '../models/WorldSettings.model';
+import { WebSocketData } from '../models/WebSocketData.model';
 import { Vector2 } from '../primitives/geometry/Vector2';
 import { Rectangle } from '../primitives/geometry/Rectangle';
 import { Square } from '../primitives/geometry/Square';
 import { PlayerCell } from './cells/PlayerCell';
 import { Controller } from './Controller';
-import { Region } from '../types/Region.enum';
+import { Region } from '../models/Region.enum';
 import { SmartBuffer } from '../primitives/SmartBuffer/SmartBuffer';
 import { PidManager } from './services/PidManager';
-import * as Protocol from '../types/Protocol.d';
+import * as Protocol from '../models/Protocol.model';
 import * as Physics from './services/Physics';
 
 const smartBuffer = new SmartBuffer();
@@ -221,7 +221,7 @@ export class GameServer {
         });
 
         this.liveUpdate = setInterval(() => {
-            this.world.tick(this.tps);
+            this.world.tick();
 
             for (const controller of this.world.getControllers()) {
                 const pid: number = controller.getPid();
