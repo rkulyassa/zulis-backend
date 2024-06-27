@@ -248,7 +248,7 @@ export class GameServer {
                     smartBuffer.writeUInt8(cellData[1]);
                     smartBuffer.writeFloat32(cellData[2]);
                     smartBuffer.writeFloat32(cellData[3]);
-                    smartBuffer.writeUInt16(cellData[4]);
+                    smartBuffer.writeFloat32(cellData[4]);
                 }
                 controller.sendWS(smartBuffer.getView().buffer);
 
