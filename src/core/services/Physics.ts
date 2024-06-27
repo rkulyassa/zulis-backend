@@ -40,3 +40,15 @@ export function getCellsCenterOfMass(cells: Array<Cell>): Vector2 {
     center.multiply(1/M);
     return center;
 }
+
+export function velocityMap(
+    radius: number,
+    minR: number,
+    maxR: number,
+    minV: number,
+    maxV: number
+  ): number {
+    const scale = (radius - minR) / (maxR - minR);
+    const velocity = maxV - (maxV - minV) * scale;
+    return velocity;
+}

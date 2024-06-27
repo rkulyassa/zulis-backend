@@ -12,7 +12,7 @@
         "MIN_MASS_TO_EJECT": 40,
         "MIN_MASS_TO_SPLIT": 126,
         "SPAWN_MASS": 10000,
-        "BASE_SPEED": 0.1,
+        "BASE_SPEED": 1,
         "SPEED_CAP": 0.5,
         "SPEED_EXPONENT": 1,
 
@@ -24,6 +24,7 @@
         "EJECT_DISPERSION": 0.3,
         "EJECT_LIFETIME": 10000,
         "EJECT_MASS": 16,
+        "EJECT_PUSH_MULTIPLIER": 0.001,
 
         "POP_BOOST": 2,
         "VIRUS_COUNT": 0,

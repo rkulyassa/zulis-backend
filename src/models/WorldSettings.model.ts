@@ -26,6 +26,7 @@ export interface WorldSettings {
     EJECT_DISPERSION: number;
     EJECT_LIFETIME: number;
     EJECT_MASS: number;
+    EJECT_PUSH_MULTIPLIER: number;
 
     // Viruses & Pops
     POP_BOOST: number;

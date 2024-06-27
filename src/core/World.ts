@@ -260,21 +260,27 @@ export class World {
             const pid = controller.getPid();
             const mouseVector = controller.getMouseVector();
             const playerCells = this.getPlayerCellsByPid(pid);
+            // @todo: store viewport in controller so this doesn't have to be called multiple times
             const targetPoint = Physics.getCellsCenterOfMass(playerCells).getSum(mouseVector);
 
             for (const cell of playerCells) {
 
                 // set velocity
                 // const speed = this.settings.BASE_SPEED * (1/tps) * cell.getRadius() ** -0.4396754;
-                const speed = this.settings.BASE_SPEED * cell.getRadius() ** -0.4396754;
+                // const speed = this.settings.BASE_SPEED * (1/this.tps) * cell.getRadius() ** -0.4396754;
+                // const scaledMagnitude = Physics.mapVelocityToExponential(base, cell.getRadius(), 0.001, 0.1);
+
+                // const speed = this.settings.BASE_SPEED * (1/this.tps) * 100/(Math.exp(cell.getRadius()*10));
+                const speed = this.settings.BASE_SPEED * (1/this.tps) * Physics.velocityMap(cell.getRadius(), 0, 10000, 0.1, 0.2);
+                
                 let d = targetPoint.getDifference(cell.getPosition());
                 let v = d.getMultiple(speed);
-                if (v.getMagnitude() > this.settings.SPEED_CAP) {
-                    v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
-                }
-                if (d.getMagnitude() === 0) { // cursor in middle
-                    cell.setVelocity(new Vector2(0));
-                }
+                // if (v.getMagnitude() > this.settings.SPEED_CAP) {
+                //     v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
+                // }
+                // if (d.getMagnitude() === 0) { // cursor in middle
+                //     cell.setVelocity(new Vector2(0));
+                // }
                 cell.setVelocity(v);
 
                 // } else {
@@ -344,8 +350,6 @@ export class World {
 
         // resolve all collisions & game logic (handled in subsequent tick)
         for (const cell of this.cells) {
-            // if (this.cells.indexOf(cell) === -1) continue;
-
             const collisions = this.quadtree.query(cell.getBoundary());
 
             for (const other of collisions) {
@@ -368,7 +372,7 @@ export class World {
                     if (other instanceof EjectedCell) {
                         if ((other.hasExitedParent() || other.getAge() > 0)) {
                             this.resolveEat(cell, other);
-                            cell.getBoost().add(other.getBoost().getMultiple(0.001));
+                            cell.getBoost().add(other.getBoost().getMultiple(this.settings.EJECT_PUSH_MULTIPLIER));
                         }
                     }
 
@@ -396,8 +400,8 @@ export class World {
                     }
 
                     if (other instanceof Virus) {
-                        other.setBoost(cell.getBoost().getNormal().getMultiple(this.settings.VIRUS_PUSH_BOOST));
                         this.actionQueue.push([WorldAction.DELETE_CELL, cell]);
+                        other.getBoost().add(cell.getVelocity().getNormal().getMultiple(this.settings.VIRUS_PUSH_BOOST));
                     }
                 }
 

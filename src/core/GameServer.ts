@@ -250,7 +250,6 @@ export class GameServer {
                     smartBuffer.writeFloat32(cellData[3]);
                     smartBuffer.writeUInt16(cellData[4]);
                 }
-                // smartBuffer.writeStringNT(JSON.stringify(cellsData));
                 controller.sendWS(smartBuffer.getView().buffer);
 
                 this.age += 1000/this.tps;
