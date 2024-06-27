@@ -401,7 +401,13 @@ export class World {
 
                     if (other instanceof Virus) {
                         this.actionQueue.push([WorldAction.DELETE_CELL, cell]);
-                        other.getBoost().add(cell.getVelocity().getNormal().getMultiple(this.settings.VIRUS_PUSH_BOOST));
+                        let boost: Vector2;
+                        if (cell.getVelocity().getMagnitude() !== 0) {
+                            boost = cell.getVelocity().getNormal().getMultiple(this.settings.VIRUS_PUSH_BOOST);
+                        } else {
+                            boost = new Vector2(1,0).getMultiple(this.settings.VIRUS_PUSH_BOOST);
+                        }
+                        other.getBoost().add(boost);
                     }
                 }
 
