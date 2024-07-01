@@ -85,6 +85,25 @@ export class GameServer {
     }
 
     /**
+     * Gets leaderboard data.
+     * @returns An array of <10 length with the sorted leaderboard data entries, as per {@link Protocol.LeaderboardEntry}.
+     */
+    getLeaderboardData(): Array<Protocol.LeaderboardEntry> {
+        const pidScores: Array<[controller: Controller, score: number]> = [];
+        for (const controller of this.world.getControllers()) {
+            const pid = controller.getPid();
+            const score = this.world.getPlayerCellsByPid(pid).reduce((sum, playerCell) => sum + playerCell.getRadius(), 0);
+            pidScores.push([controller, score]);
+        }
+        const sorted = pidScores.sort((a, b) => a[1] - b[1]).slice(0,10);
+        const leaderboardData: Array<Protocol.LeaderboardEntry> = [];
+        for (const [controller, _] of sorted) {
+            leaderboardData.push([controller.getNick()]);
+        }
+        return leaderboardData;
+    }
+
+    /**
      * Handles a new incoming connection.
      * @param ws - The incoming connection.
      */
@@ -229,7 +248,7 @@ export class GameServer {
                 }
 
                 smartBuffer.build();
-                smartBuffer.writeUInt8(Protocol.ServerOpcodes.UPDATE_GAME_STATE);
+                smartBuffer.writeUInt8(Protocol.ServerOpcodes.GAMESTATE_UPDATE);
                 const [viewportX, viewportY]: [number, number] = viewport.getCenter().toArray();
                 smartBuffer.writeFloat32(viewportX);
                 smartBuffer.writeFloat32(viewportY);
@@ -243,8 +262,19 @@ export class GameServer {
                 }
                 controller.sendWS(smartBuffer.getView().buffer);
 
-                this.age += 1000/this.tps;
+                const leaderboardRefreshTime = 1000;
+                if (this.age % leaderboardRefreshTime < this.tps) {
+                    smartBuffer.build();
+                    smartBuffer.writeUInt8(Protocol.ServerOpcodes.LEADERBOARD_UPDATE);
+                    const leaderboardData: Array<Protocol.LeaderboardEntry> = this.getLeaderboardData();
+                    for (const [nick] of leaderboardData) {
+                        smartBuffer.writeStringNT(nick);
+                    }
+                    controller.sendWS(smartBuffer.getView().buffer);
+                }
             }
+
+            this.age += 1000/this.tps;
         }, 1000/this.tps);
 
     }

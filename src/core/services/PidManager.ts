@@ -1,9 +1,9 @@
 import { CellType } from "../../models/CellType.enum";
 
 export class PidManager {
-    private reservedPids: Array<CellType>;
-    private capacity: number;
-    private pids: Uint8Array;
+    private readonly reservedPids: Array<CellType>;
+    private readonly capacity: number;
+    private readonly pids: Uint8Array;
 
     constructor(capacity: number) {
         // reserve pids 0-3 for non-playerCells
@@ -23,12 +23,27 @@ export class PidManager {
      */
     getAvailablePid(): number {
         const offset = this.reservedPids.length;
-        for (let i = 0; i < this.capacity; i++) {
+        for (let i = offset; i < this.capacity; i++) {
             if (this.pids[i] === 0) {
                 this.pids[i] = 1;
-                return i + offset;
+                return i;
             }
         }
+    }
+
+    /**
+     * Gets the pids that are in use.
+     * @returns An array of the used pids.
+     */
+    getUsedPids(): Array<number> {
+        const usedPids = [];
+        const offset = this.reservedPids.length;
+        for (let i = offset; i < this.capacity; i++) {
+            if (this.pids[i] === 1) {
+                usedPids.push(i);
+            }
+        }
+        return usedPids;
     }
   
     /**

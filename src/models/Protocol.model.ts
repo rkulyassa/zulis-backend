@@ -1,5 +1,3 @@
-import { CellType } from "./CellType.enum";
-
 export const enum ClientOpcodes {
     PLAYER_UPDATE = 0,
     SPECTATE = 1,
@@ -26,26 +24,14 @@ export namespace ClientData {
 
 export const enum ServerOpcodes {
     LOAD_WORLD = 0,
-    UPDATE_GAME_STATE = 1,
+    GAMESTATE_UPDATE = 1,
     PLAYER_UPDATE = 2,
+    LEADERBOARD_UPDATE = 3
 }
 
-export namespace ServerData {
-    type LOAD_WORLD = number;
-    type UPDATE_GAME_STATE = [
-        viewportX: number,
-        viewportY: number,
-        cells: Array<CellData>,
-    ];
-    type PLAYER_UPDATE = [
-        pid: number,
-        nick: string,
-        skinId: string|null,
-        inTag: boolean,
-    ];
-}
-
-// export type ServerData = ServerData.LOAD_WORLD | ServerData.UPDATE_GAME_STATE | ServerData.PLAYER_UPDATE;
+export type LeaderboardEntry = [
+    name: string
+]
 
 export type CellData = [
     cellId: number,
