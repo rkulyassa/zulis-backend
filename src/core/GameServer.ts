@@ -1,13 +1,13 @@
 import * as uWS from 'uWebSockets.js';
 import { World } from './World';
 import { WorldSettings } from '../models/WorldSettings.model';
-import { WebSocketData } from '../models/WebSocketData.model';
+import { WebSocketData } from '../models/WebSocketData.interface';
 import { Vector2 } from '../primitives/geometry/Vector2';
 import { Rectangle } from '../primitives/geometry/Rectangle';
 import { Square } from '../primitives/geometry/Square';
 import { PlayerCell } from './cells/PlayerCell';
 import { Controller } from './Controller';
-import { Region } from '../models/Region.enum';
+import { Region } from '../models/Region.type';
 import { SmartBuffer } from '../primitives/SmartBuffer/SmartBuffer';
 import { PidManager } from './services/PidManager';
 import * as Protocol from '../models/Protocol.model';
@@ -50,16 +50,6 @@ export class GameServer {
 
     getRegion(): Region {
         return this.region;
-    }
-    getRegionAsString(): string {
-        switch (this.region) {
-            case Region.NA:
-                return 'na';
-            case Region.EU:
-                return 'eu';
-            case Region.AS:
-                return 'as';
-        }
     }
 
     getCapacity(): number {
@@ -201,6 +191,7 @@ export class GameServer {
         const pid: number = ws.getUserData().pid;
         this.world.disconnectPlayerCellsByPid(pid);
         this.world.removeControllerByPid(pid);
+        this.pidManager.releasePid(pid);
         console.log(`Player left (pid: ${pid})`);
     }
 

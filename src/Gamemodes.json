@@ -27,7 +27,7 @@
         "EJECT_PUSH_MULTIPLIER": 0.001,
 
         "POP_BOOST": 2,
-        "VIRUS_COUNT": 0,
+        "VIRUS_COUNT": 20,
         "VIRUS_PUSH_BOOST": 1,
         "VIRUS_MASS": 150,
 

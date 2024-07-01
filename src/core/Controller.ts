@@ -1,6 +1,6 @@
 import { Vector2 } from '../primitives/geometry/Vector2';
 import { WebSocket } from 'uWebSockets.js';
-import { WebSocketData } from '../models/WebSocketData.model';
+import { WebSocketData } from '../models/WebSocketData.interface';
 
 export class Controller {
     private readonly pid: number;

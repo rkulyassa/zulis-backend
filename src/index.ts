@@ -3,14 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import { GameServer } from './core/GameServer';
 import Gamemodes from './GameModes.json';
-import { Region } from './models/Region.enum';
 
 const PORT: number = 9000;
 const app: express.Application = express();
 const gameServers: Array<GameServer> = [
-    new GameServer(PORT, 'Mega 1', Region.EU, 60, 50, Gamemodes.Mega),
-    new GameServer(PORT, 'Mega 2', Region.EU, 20, 45, Gamemodes.Mega),
-    new GameServer(PORT, 'Mega 3', Region.EU, 20, 35, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 1', 'EU', 60, 50, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 2', 'EU', 20, 45, Gamemodes.Mega),
+    new GameServer(PORT, 'Mega 3', 'EU', 20, 35, Gamemodes.Mega),
 ];
 
 for (const gameServer of gameServers) gameServer.start();
@@ -23,7 +22,7 @@ app.get('/gameservers.json', (req, res) => {
         "as": {}
     }
     for (const gameServer of gameServers) {
-        data[gameServer.getRegionAsString()][gameServer.getName()] = {
+        data[gameServer.getRegion()][gameServer.getName()] = {
             "players": gameServer.getNumberOfPlayers(),
             "slots": gameServer.getCapacity(),
             "url": `ws://localhost:${gameServer.getPort()}`
