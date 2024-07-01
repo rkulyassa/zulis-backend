@@ -30,7 +30,7 @@ export const enum ServerOpcodes {
 }
 
 export type LeaderboardEntry = [
-    name: string
+    pid: number
 ]
 
 export type CellData = [

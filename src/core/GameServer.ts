@@ -98,7 +98,7 @@ export class GameServer {
         const sorted = pidScores.sort((a, b) => a[1] - b[1]).slice(0,10);
         const leaderboardData: Array<Protocol.LeaderboardEntry> = [];
         for (const [controller, _] of sorted) {
-            leaderboardData.push([controller.getNick()]);
+            leaderboardData.push([controller.getPid()]);
         }
         return leaderboardData;
     }
@@ -267,8 +267,8 @@ export class GameServer {
                     smartBuffer.build();
                     smartBuffer.writeUInt8(Protocol.ServerOpcodes.LEADERBOARD_UPDATE);
                     const leaderboardData: Array<Protocol.LeaderboardEntry> = this.getLeaderboardData();
-                    for (const [nick] of leaderboardData) {
-                        smartBuffer.writeStringNT(nick);
+                    for (const [pid] of leaderboardData) {
+                        smartBuffer.writeUInt8(pid);
                     }
                     controller.sendWS(smartBuffer.getView().buffer);
                 }
