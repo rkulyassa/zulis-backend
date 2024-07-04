@@ -262,8 +262,8 @@ export class GameServer {
                 }
                 controller.sendWS(smartBuffer.getView().buffer);
 
-                const leaderboardRefreshTime = 1000;
-                if (this.age % leaderboardRefreshTime < this.tps) {
+                const leaderboardRefreshRate = 1000;
+                if (this.age % leaderboardRefreshRate < this.tps) {
                     smartBuffer.build();
                     smartBuffer.writeUInt8(Protocol.ServerOpcodes.LEADERBOARD_UPDATE);
                     const leaderboardData: Array<Protocol.LeaderboardEntry> = this.getLeaderboardData();

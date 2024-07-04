@@ -263,6 +263,18 @@ export class World {
             // @todo: store viewport in controller so this doesn't have to be called multiple times
             const targetPoint = Physics.getCellsCenterOfMass(playerCells).getSum(mouseVector);
 
+            let shouldEject: boolean;
+            if (controller.isEjecting()) {
+                let ejectDelayTick = controller.getEjectTick();
+                if (ejectDelayTick > 0) {
+                    // controller.setEjectTick(ejectDelayTick - 1000/this.tps);
+                    controller.setEjectTick(ejectDelayTick - 1);
+                } else {
+                    shouldEject = true;
+                    controller.setEjectTick(this.settings.EJECT_DELAY_TICKS);
+                }
+            }
+
             for (const cell of playerCells) {
 
                 // set velocity
@@ -271,17 +283,34 @@ export class World {
                 // const scaledMagnitude = Physics.mapVelocityToExponential(base, cell.getRadius(), 0.001, 0.1);
 
                 // const speed = this.settings.BASE_SPEED * (1/this.tps) * 100/(Math.exp(cell.getRadius()*10));
-                const speed = this.settings.BASE_SPEED * (1/this.tps) * Physics.velocityMap(cell.getRadius(), 0, 10000, 0.1, 0.2);
+                // const speed = this.settings.BASE_SPEED * (1/this.tps) * Physics.velocityMap(cell.getRadius(), 0, 10000, 0.1, 0.2);
+                let speed = 0.01 * cell.getRadius() ** -0.45;
+                // if (speed < 0.004) speed = 0.004;
+                // if (speed > 0.01) speed = 0.01;
                 
                 let d = targetPoint.getDifference(cell.getPosition());
                 let v = d.getMultiple(speed);
+                const MIN = 0.1;
+                const MAX = 0.2;
+                if (v.getMagnitude() !== 0) {
+                    if (v.getMagnitude() < MIN) {
+                        v = v.getNormal().getMultiple(MIN);
+                    }
+                    if (v.getMagnitude() > MAX) {
+                        v = v.getNormal().getMultiple(MAX);
+                    }
+                    cell.setVelocity(v);
+                } else {
+                    cell.setVelocity(new Vector2(0));
+                }
+
                 // if (v.getMagnitude() > this.settings.SPEED_CAP) {
                 //     v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
                 // }
                 // if (d.getMagnitude() === 0) { // cursor in middle
                 //     cell.setVelocity(new Vector2(0));
                 // }
-                cell.setVelocity(v);
+                // cell.setVelocity(v);
 
                 // } else {
                 //     let v = d.getMultiple(speed);
@@ -292,16 +321,23 @@ export class World {
                 // }
 
                 // handle ejecting
-                if (controller.isEjecting()) {
-                    let ejectDelayTick = controller.getEjectTick();
-                    if (ejectDelayTick > 0) {
-                        controller.setEjectTick(ejectDelayTick - 1000/this.tps);
-                    } else {
-                        if (d.getMagnitude() === 0) d = new Vector2(1,0); // cursor in middle, feed horizontally
-                        if (cell.getMass() >= this.settings.MIN_MASS_TO_EJECT) {
-                            this.ejectFromCell(cell, d.getNormal());
-                        }
-                        controller.setEjectTick(this.settings.EJECT_DELAY);
+                // if (controller.isEjecting()) {
+                //     let ejectDelayTick = controller.getEjectTick();
+                //     if (ejectDelayTick > 0) {
+                //         // controller.setEjectTick(ejectDelayTick - 1000/this.tps);
+                //         controller.setEjectTick(ejectDelayTick - 1);
+                //     } else {
+                //         if (d.getMagnitude() === 0) d = new Vector2(1,0); // cursor in middle, feed horizontally
+                //         if (cell.getMass() >= this.settings.MIN_MASS_TO_EJECT) {
+                //             this.ejectFromCell(cell, d.getNormal());
+                //         }
+                //         controller.setEjectTick(this.settings.EJECT_DELAY_TICKS);
+                //     }
+                // }
+                if (shouldEject) {
+                    if (d.getMagnitude() === 0) d = new Vector2(1,0); // cursor in middle, feed horizontally
+                    if (cell.getMass() >= this.settings.MIN_MASS_TO_EJECT) {
+                        this.ejectFromCell(cell, d.getNormal());
                     }
                 }
             }
@@ -370,9 +406,12 @@ export class World {
                     }
 
                     if (other instanceof EjectedCell) {
-                        if ((other.hasExitedParent() || other.getAge() > 0)) {
+                        // if ((other.hasExitedParent() || other.getAge() > 0)) {
+                        if (other.getAge() > 0) {
                             this.resolveEat(cell, other);
                             cell.getBoost().add(other.getBoost().getMultiple(this.settings.EJECT_PUSH_MULTIPLIER));
+                            // const d = this.getControllerByPid(cell.getOwnerPid()).getMouseVector().getNormal();
+                            // cell.getBoost().add(d.getMultiple(0.003));
                         }
                     }
 

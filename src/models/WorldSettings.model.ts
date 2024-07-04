@@ -22,7 +22,7 @@ export interface WorldSettings {
 
     // Ejected Cells
     EJECT_BOOST: number;
-    EJECT_DELAY: number;
+    EJECT_DELAY_TICKS: number;
     EJECT_DISPERSION: number;
     EJECT_LIFETIME: number;
     EJECT_MASS: number;
