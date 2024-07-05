@@ -284,7 +284,7 @@ export class World {
 
                 // const speed = this.settings.BASE_SPEED * (1/this.tps) * 100/(Math.exp(cell.getRadius()*10));
                 // const speed = this.settings.BASE_SPEED * (1/this.tps) * Physics.velocityMap(cell.getRadius(), 0, 10000, 0.1, 0.2);
-                let speed = 0.01 * cell.getRadius() ** -0.439;
+                let speed = 0.008 * cell.getRadius() ** -0.4396754;
                 // if (speed < 0.004) speed = 0.004;
                 // if (speed > 0.01) speed = 0.01;
                 
@@ -408,7 +408,7 @@ export class World {
                             if (this.canMerge(cell, other)) {
                                 this.resolveEat(cell, other);
                             } else if (cell.getAge() >= this.settings.SPLIT_RESOLVE_DELAY && other.getAge() >= this.settings.SPLIT_RESOLVE_DELAY) {
-                                Physics.resolveCollision(cell, other);
+                                Physics.resolveRigidCollision(cell, other);
                             }
                         } else {
                             this.resolveEat(cell, other);
@@ -445,7 +445,7 @@ export class World {
 
                 if (cell instanceof EjectedCell) {
                     if (other instanceof EjectedCell) {
-                        Physics.resolveCollision(cell, other);
+                        Physics.resolveRigidCollision(cell, other);
                     }
 
                     if (other instanceof Virus) {
@@ -461,7 +461,7 @@ export class World {
                 }
 
                 if (cell instanceof DeadCell && other instanceof DeadCell) {
-                    Physics.resolveCollision(cell, other);
+                    Physics.resolveRigidCollision(cell, other);
                 }
             }
         }

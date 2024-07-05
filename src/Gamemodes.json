@@ -24,7 +24,7 @@
         "EJECT_DISPERSION": 0.3,
         "EJECT_LIFETIME": 10000,
         "EJECT_MASS": 16,
-        "EJECT_PUSH_MULTIPLIER": 0.005,
+        "EJECT_PUSH_MULTIPLIER": 0.001,
 
         "POP_BOOST": 2,
         "VIRUS_COUNT": 0,

@@ -6,7 +6,7 @@ import { Vector2 } from '../../primitives/geometry/Vector2';
  * @param a - First {@link Cell}
  * @param b - Second {@link Cell}
  */
-export function resolveCollision(a: Cell, b: Cell): void {
+export function resolveRigidCollision(a: Cell, b: Cell): void {
     const d = b.getPosition().getDifference(a.getPosition());
     if (d.getMagnitude() === 0) return; // Ignore if cells are perfectly on top of each other (this assumes they will move in the next tick)
     const n = d.getNormal();
@@ -21,6 +21,12 @@ export function resolveCollision(a: Cell, b: Cell): void {
 
     a.getPosition().subtract(aM);
     b.getPosition().add(bM);
+
+    // const energyTransferCoeff = 0.05;
+    // const aE = b.getBoost().getMultiple(energyTransferCoeff);
+    // const bE = a.getBoost().getMultiple(energyTransferCoeff);
+    // a.getBoost().subtract(aE);
+    // b.getBoost().add(bE);
 }
 
 /**
