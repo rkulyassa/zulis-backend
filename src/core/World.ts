@@ -284,25 +284,35 @@ export class World {
 
                 // const speed = this.settings.BASE_SPEED * (1/this.tps) * 100/(Math.exp(cell.getRadius()*10));
                 // const speed = this.settings.BASE_SPEED * (1/this.tps) * Physics.velocityMap(cell.getRadius(), 0, 10000, 0.1, 0.2);
-                let speed = 0.01 * cell.getRadius() ** -0.45;
+                let speed = 0.01 * cell.getRadius() ** -0.439;
                 // if (speed < 0.004) speed = 0.004;
                 // if (speed > 0.01) speed = 0.01;
                 
                 let d = targetPoint.getDifference(cell.getPosition());
-                let v = d.getMultiple(speed);
-                const MIN = 0.1;
-                const MAX = 0.2;
-                if (v.getMagnitude() !== 0) {
-                    if (v.getMagnitude() < MIN) {
-                        v = v.getNormal().getMultiple(MIN);
+                const minThreshold = 50; // in pixels(?)
+                const maxThreshold = 100;
+                if (d.getMagnitude() !== 0) {
+                    if (d.getMagnitude() < minThreshold) {
+                        d = d.getNormal().getMultiple(minThreshold);
+                    } else if (d.getMagnitude() > maxThreshold) {
+                        d = d.getNormal().getMultiple(maxThreshold);
                     }
-                    if (v.getMagnitude() > MAX) {
-                        v = v.getNormal().getMultiple(MAX);
-                    }
-                    cell.setVelocity(v);
-                } else {
-                    cell.setVelocity(new Vector2(0));
                 }
+                let v = d.getMultiple(speed);
+                // const MIN = 0.1;
+                // const MAX = 0.15;
+                // if (v.getMagnitude() !== 0) {
+                //     if (v.getMagnitude() < MIN) {
+                //         v = v.getNormal().getMultiple(MIN);
+                //     }
+                //     if (v.getMagnitude() > MAX) {
+                //         v = v.getNormal().getMultiple(MAX);
+                //     }
+                //     cell.setVelocity(v);
+                // } else {
+                //     cell.setVelocity(new Vector2(0));
+                // }
+                cell.setVelocity(v);
 
                 // if (v.getMagnitude() > this.settings.SPEED_CAP) {
                 //     v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
