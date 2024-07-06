@@ -85,6 +85,7 @@ export abstract class Cell {
         this.position.add(this.velocity);
         this.position.add(this.boost);
         this.boost.multiply(worldFriction);
+        this.boost.roundToZeroCheck();
     }
 
     handleWallBounce(worldBoundary: Square): void {

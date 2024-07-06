@@ -277,79 +277,33 @@ export class World {
 
             for (const cell of playerCells) {
 
-                // set velocity
-                // const speed = this.settings.BASE_SPEED * (1/tps) * cell.getRadius() ** -0.4396754;
-                // const speed = this.settings.BASE_SPEED * (1/this.tps) * cell.getRadius() ** -0.4396754;
-                // const scaledMagnitude = Physics.mapVelocityToExponential(base, cell.getRadius(), 0.001, 0.1);
+                let d: Vector2 = targetPoint.getDifference(cell.getPosition());
 
-                // const speed = this.settings.BASE_SPEED * (1/this.tps) * 100/(Math.exp(cell.getRadius()*10));
-                // const speed = this.settings.BASE_SPEED * (1/this.tps) * Physics.velocityMap(cell.getRadius(), 0, 10000, 0.1, 0.2);
-                let speed = 0.008 * cell.getRadius() ** -0.4396754;
-                // if (speed < 0.004) speed = 0.004;
-                // if (speed > 0.01) speed = 0.01;
-                
-                let d = targetPoint.getDifference(cell.getPosition());
-                const minThreshold = 50; // in pixels(?)
-                const maxThreshold = 100;
-                if (d.getMagnitude() !== 0) {
-                    if (d.getMagnitude() < minThreshold) {
-                        d = d.getNormal().getMultiple(minThreshold);
-                    } else if (d.getMagnitude() > maxThreshold) {
-                        d = d.getNormal().getMultiple(maxThreshold);
-                    }
-                }
-                let v = d.getMultiple(speed);
-                // const MIN = 0.1;
-                // const MAX = 0.15;
-                // if (v.getMagnitude() !== 0) {
-                //     if (v.getMagnitude() < MIN) {
-                //         v = v.getNormal().getMultiple(MIN);
-                //     }
-                //     if (v.getMagnitude() > MAX) {
-                //         v = v.getNormal().getMultiple(MAX);
-                //     }
-                //     cell.setVelocity(v);
-                // } else {
-                //     cell.setVelocity(new Vector2(0));
-                // }
-                cell.setVelocity(v);
-
-                // if (v.getMagnitude() > this.settings.SPEED_CAP) {
-                //     v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
-                // }
-                // if (d.getMagnitude() === 0) { // cursor in middle
-                //     cell.setVelocity(new Vector2(0));
-                // }
-                // cell.setVelocity(v);
-
-                // } else {
-                //     let v = d.getMultiple(speed);
-                //     // if (v.getMagnitude() > this.settings.SPEED_CAP) {
-                //     //     v = v.getNormal().getMultiple(this.settings.SPEED_CAP);
-                //     // }
-                //     cell.setVelocity(v);
-                // }
-
-                // handle ejecting
-                // if (controller.isEjecting()) {
-                //     let ejectDelayTick = controller.getEjectTick();
-                //     if (ejectDelayTick > 0) {
-                //         // controller.setEjectTick(ejectDelayTick - 1000/this.tps);
-                //         controller.setEjectTick(ejectDelayTick - 1);
-                //     } else {
-                //         if (d.getMagnitude() === 0) d = new Vector2(1,0); // cursor in middle, feed horizontally
-                //         if (cell.getMass() >= this.settings.MIN_MASS_TO_EJECT) {
-                //             this.ejectFromCell(cell, d.getNormal());
-                //         }
-                //         controller.setEjectTick(this.settings.EJECT_DELAY_TICKS);
-                //     }
-                // }
                 if (shouldEject) {
                     if (d.getMagnitude() === 0) d = new Vector2(1,0); // cursor in middle, feed horizontally
                     if (cell.getMass() >= this.settings.MIN_MASS_TO_EJECT) {
                         this.ejectFromCell(cell, d.getNormal());
                     }
                 }
+
+                // console.log(cell.getBoost().getMagnitude());
+                // if (cell.getBoost().getMagnitude() > 0) continue; // if cell is boosting, ignore changes to velocity
+                if (cell.getAge() <= this.settings.SPLIT_RESOLVE_DELAY) continue;
+
+                const speed = this.settings.BASE_SPEED * cell.getRadius() ** -0.086533; //-0.4396754;
+                
+                const minThreshold = 50; // in pixels(?)
+                const maxThreshold = 100;
+                let practicalVector: Vector2 = d; // the mouse vector but with the threshold cutoff
+                if (d.getMagnitude() !== 0) {
+                    if (d.getMagnitude() < minThreshold) {
+                        practicalVector = d.getNormal().getMultiple(minThreshold);
+                    } else if (d.getMagnitude() > maxThreshold) {
+                        practicalVector = d.getNormal().getMultiple(maxThreshold);
+                    }
+                }
+                const v = practicalVector.getMultiple(speed);
+                cell.setVelocity(v);
             }
 
             // handle split cells

@@ -76,6 +76,15 @@ export class Vector2 {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
+    roundToZeroCheck(threshold: number = 1e-1): void {
+        if (Math.abs(this.x) < threshold) {
+            this.x = 0;
+        }
+        if (Math.abs(this.y) < threshold) {
+            this.y = 0;
+        }
+    }
+
     getNormal(): Vector2 {
         const magnitude = this.getMagnitude();
         if (magnitude == 0) {
