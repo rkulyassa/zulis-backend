@@ -135,6 +135,7 @@ export class World {
         const newCell = new PlayerCell(pid, radius, position, boost);
         this.actionQueue.push([WorldAction.CREATE_CELL, newCell]);
         this.actionQueue.push([WorldAction.UPDATE_CELL, cell, -newCell.getMass()]);
+        console.log(`New cell ${newCell.getId()} has ${newCell.getMass()} mass`);
     }
 
     /**
@@ -231,11 +232,14 @@ export class World {
     }
 
     tick(): void {
-        // console.log(`\ntick ${Date.now()}\n`);
+        // console.log(`tick ${Date.now()}`);
         // this.quadtree.print();
+
+        this.actionQueue.sort((a, b) => a[0] - b[0]);
 
         while (this.actionQueue.length > 0) {
             const [action, cell, data] = this.actionQueue.shift();
+
             switch(action) {
                 case WorldAction.CREATE_CELL:
                     this.cells.push(cell);
@@ -245,6 +249,7 @@ export class World {
                     break;
                 case WorldAction.UPDATE_CELL:
                     cell.setRadius(areaToRadius(cell.getMass() + data));
+                    console.log(`Updating cell ${cell.getId()} to ${cell.getMass()} mass`)
                     break;
                 case WorldAction.EAT:
                     let [predator, prey] = [cell, data];
@@ -290,31 +295,32 @@ export class World {
                 // if (cell.getBoost().getMagnitude() > 0) continue; // if cell is boosting, ignore changes to velocity
                 if (cell.getAge() <= this.settings.SPLIT_RESOLVE_DELAY) continue;
 
-                const speed = this.settings.BASE_SPEED * cell.getRadius() ** -0.086533; //-0.4396754;
-                
+                // 0.005, -0.086533
+
+                const speed = this.settings.BASE_SPEED * cell.getRadius() ** this.settings.SPEED_EXPONENT;
                 const minThreshold = 50; // in pixels(?)
                 const maxThreshold = 100;
-                let practicalVector: Vector2 = d; // the mouse vector but with the threshold cutoff
-                if (d.getMagnitude() !== 0) {
-                    if (d.getMagnitude() < minThreshold) {
-                        practicalVector = d.getNormal().getMultiple(minThreshold);
-                    } else if (d.getMagnitude() > maxThreshold) {
-                        practicalVector = d.getNormal().getMultiple(maxThreshold);
+                const magnitude = d.getMagnitude();
+                let v: Vector2 = d; // the mouse vector but with the threshold cutoff
+                if (magnitude !== 0) {
+                    if (magnitude < minThreshold) {
+                        v = d.getNormal().getMultiple(minThreshold * speed);
+                    } else if (magnitude > maxThreshold) {
+                        v = d.getNormal().getMultiple(maxThreshold * speed);
                     }
                 }
-                const v = practicalVector.getMultiple(speed);
                 cell.setVelocity(v);
             }
 
             // handle split cells
-            let tempCellCount = playerCells.length;
+            let cellCount = playerCells.length;
             const toSplit = controller.getToSplit();
             if (toSplit > 0) {
                 for (const cell of playerCells) {
-                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && tempCellCount < this.settings.MAX_CELLS) {
+                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && cellCount < this.settings.MAX_CELLS) {
                         const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
                         this.splitCell(cell, splitDirection);
-                        tempCellCount += 1;
+                        cellCount += 1;
                     }
                 }
                 controller.setToSplit(toSplit-1);

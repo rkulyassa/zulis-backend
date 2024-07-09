@@ -13,7 +13,6 @@ export interface WorldSettings {
     MIN_MASS_TO_EJECT: number;
     MIN_MASS_TO_SPLIT: number;
     SPAWN_MASS: number;
-    SPEED_CAP: number;
     SPEED_EXPONENT: number;
 
     // Splits

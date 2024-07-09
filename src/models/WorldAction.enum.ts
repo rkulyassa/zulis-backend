@@ -1,6 +1,6 @@
 export const enum WorldAction {
+    UPDATE_CELL,
     CREATE_CELL,
     DELETE_CELL,
-    UPDATE_CELL,
     EAT
 }
