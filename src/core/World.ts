@@ -304,12 +304,12 @@ export class World {
                 let v: Vector2 = d; // the mouse vector but with the threshold cutoff
                 if (magnitude !== 0) {
                     if (magnitude < minThreshold) {
-                        v = d.getNormal().getMultiple(minThreshold * speed);
+                        v = d.getNormal().getMultiple(minThreshold);
                     } else if (magnitude > maxThreshold) {
-                        v = d.getNormal().getMultiple(maxThreshold * speed);
+                        v = d.getNormal().getMultiple(maxThreshold);
                     }
                 }
-                cell.setVelocity(v);
+                cell.setVelocity(v.getMultiple(speed));
             }
 
             // handle split cells
