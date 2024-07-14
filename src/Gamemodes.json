@@ -3,7 +3,7 @@
     "Mega": {
         "WORLD_EAT_OVERLAP_REQ": 0.35,
         "WORLD_EAT_SIZE_REQ": 1.2,
-        "WORLD_FRICTION": 0.96,
+        "WORLD_FRICTION": 0.95,
         "WORLD_SIZE": 700,
 
         "MAX_CELLS": 200,
@@ -11,19 +11,20 @@
         "MERGE_TIME_SCALE": 0.25,
         "MIN_MASS_TO_EJECT": 40,
         "MIN_MASS_TO_SPLIT": 126,
-        "SPAWN_MASS": 3600,
-        "BASE_SPEED": 0.015,
+        "SPAWN_MASS": 4900,
+        "BASE_SPEED": 0.007,
         "SPEED_EXPONENT": -0.4396754,
 
         "SPLIT_BOOST": 2,
         "SPLIT_RESOLVE_DELAY": 450,
+        "SPLIT_DELAY_TICKS": 3,
 
         "EJECT_BOOST": 2,
-        "EJECT_DELAY_TICKS": 1,
+        "EJECT_DELAY_TICKS": 3,
         "EJECT_DISPERSION": 0.1,
         "EJECT_LIFETIME": 10000,
         "EJECT_MASS": 16,
-        "EJECT_PUSH_MULTIPLIER": 0.001,
+        "EJECT_PUSH_MULTIPLIER": 0.0025,
 
         "POP_BOOST": 2,
         "VIRUS_COUNT": 0,

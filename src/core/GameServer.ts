@@ -184,7 +184,7 @@ export class GameServer {
                 break;
             case Protocol.ClientOpcodes.SPLIT:
                 const macro: Protocol.ClientData.SPLIT = smartBuffer.readUInt8();
-                controller.setToSplit(macro+1);
+                controller.setToSplit(controller.getToSplit() + (macro+1)*this.world.getSetting('SPLIT_DELAY_TICKS'));
                 break;
             case Protocol.ClientOpcodes.STOP_MOVEMENT:
                 break;

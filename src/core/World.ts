@@ -130,14 +130,15 @@ export class World {
     splitCell(cell: PlayerCell, direction: Vector2): Cell {
         const pid = cell.getOwnerPid();
         let radius = Math.sqrt((cell.getRadius() * cell.getRadius())/2);
-        const position = cell.getPosition().getSum(direction);
+        const SPLIT_DISTANCE = 2;
+        const position = cell.getPosition().getSum(direction.getMultiple(SPLIT_DISTANCE));
         const boost = direction.getMultiple(this.settings.SPLIT_BOOST);
 
-        const isEjecting = this.getControllerByPid(pid).isEjecting();
-        if (isEjecting) {
+        // const isEjecting = this.getControllerByPid(pid).isEjecting();
+        // if (isEjecting) {
 
-            // radius += areaToRadius(this.settings.EJECT_MASS);
-        }
+        //     // radius += areaToRadius(this.settings.EJECT_MASS);
+        // }
         // console.log('radii', cell.getMass(), cell.getRadius(), radius);
         // if (cell.getRadius() - radius < 0) return;
 
@@ -289,16 +290,18 @@ export class World {
             let cellCount = playerCells.length;
             const toSplit = controller.getToSplit();
             if (toSplit > 0) {
-                for (const cell of playerCells) {
-                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && cellCount < this.settings.MAX_CELLS) {
-                        const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
-                        const newCell = this.splitCell(cell, splitDirection);
-                        // newCell.getBoost().add(newCell.getBoost().getNormal().getMultiple(toSplit*0.5));
-                        // if (cell.getMass() > this.settings.MIN_MASS_TO_EJECT) {
-                        //     this.actionQueue.push([WorldAction.UPDATE_CELL, cell, -this.settings.EJECT_MASS]);
-                        //     this.actionQueue.push([WorldAction.UPDATE_CELL, newCell, -this.settings.EJECT_MASS]);
-                        // }
-                        cellCount += 1;
+                if (toSplit % this.settings.SPLIT_DELAY_TICKS === 0) {
+                    for (const cell of playerCells) {
+                        if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && cellCount < this.settings.MAX_CELLS) {
+                            const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
+                            const newCell = this.splitCell(cell, splitDirection);
+                            // newCell.getBoost().add(newCell.getBoost().getNormal().getMultiple(toSplit*0.5));
+                            // if (cell.getMass() > this.settings.MIN_MASS_TO_EJECT) {
+                            //     this.actionQueue.push([WorldAction.UPDATE_CELL, cell, -this.settings.EJECT_MASS]);
+                            //     this.actionQueue.push([WorldAction.UPDATE_CELL, newCell, -this.settings.EJECT_MASS]);
+                            // }
+                            cellCount += 1;
+                        }
                     }
                 }
                 controller.setToSplit(toSplit-1);
@@ -380,7 +383,7 @@ export class World {
             if (a.getTypeEnum() !== b.getTypeEnum()) {
                 return b.getTypeEnum() - a.getTypeEnum();
             }
-            return a.getRadius() - b.getRadius()
+            return b.getRadius() - a.getRadius()
         });
 
         // resolve all collisions & game logic (handled in subsequent tick)

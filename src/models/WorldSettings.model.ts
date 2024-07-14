@@ -18,6 +18,7 @@ export interface WorldSettings {
     // Splits
     SPLIT_BOOST: number;
     SPLIT_RESOLVE_DELAY: number;
+    SPLIT_DELAY_TICKS: number;
 
     // Ejected Cells
     EJECT_BOOST: number;
