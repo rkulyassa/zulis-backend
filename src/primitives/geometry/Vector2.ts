@@ -13,6 +13,7 @@ export class Vector2 {
     }
 
     getX(): number {
+        // if (Number.isNaN(this.x)) throw new Error();
         return this.x;
     }
     setX(x: number): void {
@@ -23,6 +24,7 @@ export class Vector2 {
     }
 
     getY(): number {
+        // if (Number.isNaN(this.y)) throw new Error();
         return this.y;
     }
     setY(y: number): void {
@@ -61,6 +63,7 @@ export class Vector2 {
     }
 
     getMultiple(scalar: number): Vector2 {
+        if (Number.isNaN(this.x)) throw new Error();
         return new Vector2(this.x * scalar, this.y * scalar);
     }
 

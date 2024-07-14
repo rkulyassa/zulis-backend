@@ -30,6 +30,7 @@ export abstract class Cell {
         return this.radius;
     }
     setRadius(radius: number): void {
+        if (Number.isNaN(radius)) throw new Error();
         this.radius = radius;
     }
 
@@ -85,6 +86,13 @@ export abstract class Cell {
         this.position.add(this.velocity);
         this.position.add(this.boost);
         this.boost.multiply(worldFriction);
+        // const m = 1;
+        // if (this.boost.getX() > 0) {
+        //     this.boost.subtract(new Vector2(m,0));
+        // }
+        // if (this.boost.getY() > 0) {
+        //     this.boost.subtract(new Vector2(0,m));
+        // }
         this.boost.roundToZeroCheck();
     }
 

@@ -23,6 +23,7 @@ export class Controller {
         this.playing = false;
         this.mouseVector = new Vector2(0);
         this.ejecting = false;
+        this.toSplit = 0;
         this.ejectTick = 0;
     }
 

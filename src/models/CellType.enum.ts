@@ -1,7 +1,7 @@
 export const enum CellType {
-    PELLET,
     PLAYER_CELL,
-    EJECTED_CELL,
+    PELLET,
     VIRUS,
     DEAD_CELL,
+    EJECTED_CELL,
 }
