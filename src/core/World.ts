@@ -127,15 +127,25 @@ export class World {
      * @param cell - The {@link PlayerCell} to be split.
      * @param direction - The {@link Vector2} direction to split the cell towards.
      */
-    splitCell(cell: PlayerCell, direction: Vector2): void {
+    splitCell(cell: PlayerCell, direction: Vector2): Cell {
         const pid = cell.getOwnerPid();
-        const radius = Math.sqrt((cell.getRadius() * cell.getRadius())/2);
+        let radius = Math.sqrt((cell.getRadius() * cell.getRadius())/2);
         const position = cell.getPosition().getSum(direction);
         const boost = direction.getMultiple(this.settings.SPLIT_BOOST);
+
+        const isEjecting = this.getControllerByPid(pid).isEjecting();
+        if (isEjecting) {
+
+            // radius += areaToRadius(this.settings.EJECT_MASS);
+        }
+        // console.log('radii', cell.getMass(), cell.getRadius(), radius);
+        // if (cell.getRadius() - radius < 0) return;
+
         const newCell = new PlayerCell(pid, radius, position, boost);
         this.actionQueue.push([WorldAction.CREATE_CELL, newCell]);
         this.actionQueue.push([WorldAction.UPDATE_CELL, cell, -newCell.getMass()]);
-        console.log(`New cell ${newCell.getId()} has ${newCell.getMass()} mass`);
+        return newCell;
+        // console.log(`New cell ${newCell.getId()} has ${newCell.getMass()} mass`);
     }
 
     /**
@@ -236,24 +246,31 @@ export class World {
         // this.quadtree.print();
 
         this.actionQueue.sort((a, b) => a[0] - b[0]);
+        // const test = [];
+        // for (const a of this.actionQueue) {
+        //     test.push(a[0]);
+        // }
+        // console.log(test.join(''));
 
         while (this.actionQueue.length > 0) {
             const [action, cell, data] = this.actionQueue.shift();
 
             switch(action) {
+                case WorldAction.UPDATE_CELL:
+                    cell.setRadius(areaToRadius(cell.getMass() + data));
+                    // console.log(`Updating cell ${cell.getId()} to ${cell.getMass()} mass (change of ${data})`);
+                    break;
                 case WorldAction.CREATE_CELL:
                     this.cells.push(cell);
+                    // console.log(`Creating cell ${cell.getId()} with ${cell.getMass()} mass`);
                     break;
                 case WorldAction.DELETE_CELL:
                     this.cells.splice(this.cells.indexOf(cell), 1);
                     break;
-                case WorldAction.UPDATE_CELL:
-                    cell.setRadius(areaToRadius(cell.getMass() + data));
-                    console.log(`Updating cell ${cell.getId()} to ${cell.getMass()} mass`)
-                    break;
                 case WorldAction.EAT:
                     let [predator, prey] = [cell, data];
                     predator.setRadius(areaToRadius(predator.getMass() + prey.getMass()));
+                    // console.log(`Updating cell ${cell.getId()} to ${cell.getMass()} mass (ate cell ${prey.getId()} for ${prey.getMass()})`);
                     this.cells.splice(this.cells.indexOf(prey), 1);
                     break;
             }
@@ -267,6 +284,25 @@ export class World {
             const playerCells = this.getPlayerCellsByPid(pid);
             // @todo: store viewport in controller so this doesn't have to be called multiple times
             const targetPoint = Physics.getCellsCenterOfMass(playerCells).getSum(mouseVector);
+
+            // handle split cells
+            let cellCount = playerCells.length;
+            const toSplit = controller.getToSplit();
+            if (toSplit > 0) {
+                for (const cell of playerCells) {
+                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && cellCount < this.settings.MAX_CELLS) {
+                        const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
+                        const newCell = this.splitCell(cell, splitDirection);
+                        // newCell.getBoost().add(newCell.getBoost().getNormal().getMultiple(toSplit*0.5));
+                        // if (cell.getMass() > this.settings.MIN_MASS_TO_EJECT) {
+                        //     this.actionQueue.push([WorldAction.UPDATE_CELL, cell, -this.settings.EJECT_MASS]);
+                        //     this.actionQueue.push([WorldAction.UPDATE_CELL, newCell, -this.settings.EJECT_MASS]);
+                        // }
+                        cellCount += 1;
+                    }
+                }
+                controller.setToSplit(toSplit-1);
+            }
 
             let shouldEject: boolean;
             if (controller.isEjecting()) {
@@ -311,20 +347,6 @@ export class World {
                 }
                 cell.setVelocity(v.getMultiple(speed));
             }
-
-            // handle split cells
-            let cellCount = playerCells.length;
-            const toSplit = controller.getToSplit();
-            if (toSplit > 0) {
-                for (const cell of playerCells) {
-                    if (cell.getMass() > this.settings.MIN_MASS_TO_SPLIT && cellCount < this.settings.MAX_CELLS) {
-                        const splitDirection = targetPoint.getDifference(cell.getPosition()).getNormal();
-                        this.splitCell(cell, splitDirection);
-                        cellCount += 1;
-                    }
-                }
-                controller.setToSplit(toSplit-1);
-            }
         }
 
         // create quadtree
@@ -354,9 +376,17 @@ export class World {
             }
         }
 
+        this.cells.sort((a, b) => {
+            if (a.getTypeEnum() !== b.getTypeEnum()) {
+                return b.getTypeEnum() - a.getTypeEnum();
+            }
+            return a.getRadius() - b.getRadius()
+        });
+
         // resolve all collisions & game logic (handled in subsequent tick)
         for (const cell of this.cells) {
             const collisions = this.quadtree.query(cell.getBoundary());
+            collisions.sort((a, b) => b.getRadius() - a.getRadius());
 
             for (const other of collisions) {
                 // if (this.cells.indexOf(other) === -1) continue;
@@ -377,12 +407,12 @@ export class World {
 
                     if (other instanceof EjectedCell) {
                         // if ((other.hasExitedParent() || other.getAge() > 0)) {
-                        if (other.getAge() > 0) {
-                            this.resolveEat(cell, other);
-                            cell.getBoost().add(other.getBoost().getMultiple(this.settings.EJECT_PUSH_MULTIPLIER));
+                        // if (other.getAge() > 0) {
+                        this.resolveEat(cell, other);
+                        cell.getBoost().add(other.getBoost().getMultiple(this.settings.EJECT_PUSH_MULTIPLIER));
                             // const d = this.getControllerByPid(cell.getOwnerPid()).getMouseVector().getNormal();
                             // cell.getBoost().add(d.getMultiple(0.003));
-                        }
+                        // }
                     }
 
                     if (other instanceof Pellet) {
