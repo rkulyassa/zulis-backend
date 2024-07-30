@@ -1,2 +1,3 @@
-# Zulis Backend
-To make a browser-based game using familiar Ogar (Agar.io mod) concepts to replace the current model of Vanis.io, as the state of the game is deteriorating at a rapid pace and the developer does not see a future within the game itself, nor has the necessary motivation to ensure the game’s success. 
+# Zulis.io Backend
+
+The (very) messy and unoptimized codebase that will soon power [Zulis.io](https://zulis.io), an Agar.io-inspired webgame.
